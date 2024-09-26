@@ -51,16 +51,24 @@ if (accessToken) {
     document.getElementById('copyText').addEventListener('click', () => {
         const outputText = document.getElementById('output').textContent;
 
-        if (outputText) {
+        if (!outputText) {
+            alert('No text to copy!');
+            return;
+        }
+
+        // Check if clipboard API is supported
+        if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(outputText)
                 .then(() => {
                     alert('Playlist text copied to clipboard!');
                 })
                 .catch(err => {
                     console.error('Error copying text to clipboard:', err);
+                    alert('Failed to copy text to clipboard. Please try again.');
                 });
         } else {
-            alert('No text to copy!');
+            // Fallback method for older browsers
+            copyTextFallback(outputText);
         }
     });
 } else {
@@ -78,4 +86,25 @@ function extractPlaylistId(url) {
     const match = url.match(regex);
     console.log('Extracted Playlist ID:', match ? match[1] : 'None');
     return match ? match[1] : null;
+}
+
+// Fallback function for older browsers
+function copyTextFallback(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed'; // Prevent scrolling to the bottom of the page in mobile browsers
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        const successful = document.execCommand('copy');
+        const msg = successful ? 'Playlist text copied to clipboard!' : 'Failed to copy text to clipboard.';
+        alert(msg);
+    } catch (err) {
+        console.error('Fallback: Error copying text to clipboard', err);
+        alert('Failed to copy text to clipboard. Please try again.');
+    }
+
+    document.body.removeChild(textArea);
 }
