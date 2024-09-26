@@ -40,7 +40,7 @@ if (accessToken) {
     });
 } else {
     // No access token, redirect to authorization URL
-    const clientId = 'YOUR_SPOTIFY_CLIENT_ID'; // Replace with your actual client ID
+    const clientId = '7ed9c71c81c1491784d55516b4be7325'; // Replace with your actual client ID
     const redirectUri = 'https://mywebsite.com/spotify/playlist2text/callback.html';
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=playlist-read-private`;
     window.location.href = authUrl;
