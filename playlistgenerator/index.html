@@ -1,1 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Playlist Formatter</title>
+    <style>
+        /* Dark Theme Styling */
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
 
+        h1 {
+            color: #1DB954;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            max-width: 500px;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background-color: #333;
+            color: #e0e0e0;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background-color: #1DB954;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #1aa34a;
+        }
+
+        #output {
+            width: 80%;
+            max-width: 500px;
+            padding: 10px;
+            background-color: #333;
+            border-radius: 5px;
+            color: #e0e0e0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        /* Add a subtle box shadow for depth */
+        input[type="text"], button, #output {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Responsive design for mobile */
+        @media (max-width: 600px) {
+            input[type="text"], button, #output {
+                width: 90%;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Spotify Playlist Formatter</h1>
+    <input type="text" id="playlistUrl" placeholder="Paste Spotify playlist link here">
+    <button id="generateList">Generate List</button>
+    <button id="copyText">Copy to Clipboard</button>
+    <pre id="output"></pre>
+
+    <script src="app.js"></script>
+</body>
+</html>
