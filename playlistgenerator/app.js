@@ -1,43 +1,45 @@
-// Event listener for the "Generate List" button
-document.getElementById('generateList').addEventListener('click', () => {
-    console.log('Generate List button clicked');
-    const playlistUrl = document.getElementById('playlistUrl').value;
-    const playlistId = extractPlaylistId(playlistUrl);
+document.addEventListener('DOMContentLoaded', () => {
+    // Event listener for the "Generate List" button
+    document.getElementById('generateList').addEventListener('click', () => {
+        console.log('Generate List button clicked');
+        const playlistUrl = document.getElementById('playlistUrl').value;
+        const playlistId = extractPlaylistId(playlistUrl);
 
-    if (!playlistId) {
-        alert('Invalid playlist URL');
-        console.log('Invalid playlist URL:', playlistUrl);
-        return;
-    }
+        if (!playlistId) {
+            alert('Invalid playlist URL');
+            console.log('Invalid playlist URL:', playlistUrl);
+            return;
+        }
 
-    // Output the playlist ID as an example (since no API call will be made)
-    const output = `Extracted Playlist ID: ${playlistId}`;
-    document.getElementById('output').textContent = output;
-});
+        // Output the playlist ID as an example (since no API call will be made)
+        const output = `Extracted Playlist ID: ${playlistId}`;
+        document.getElementById('output').textContent = output;
+    });
 
-// Add event listener for the "Copy to Clipboard" button
-document.getElementById('copyText').addEventListener('click', () => {
-    const outputText = document.getElementById('output').textContent;
+    // Add event listener for the "Copy to Clipboard" button
+    document.getElementById('copyText').addEventListener('click', () => {
+        const outputText = document.getElementById('output').textContent;
 
-    if (!outputText) {
-        alert('No text to copy!');
-        return;
-    }
+        if (!outputText) {
+            alert('No text to copy!');
+            return;
+        }
 
-    // Check if clipboard API is supported
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(outputText)
-            .then(() => {
-                alert('Text copied to clipboard!');
-            })
-            .catch(err => {
-                console.error('Error copying text to clipboard:', err);
-                alert('Failed to copy text to clipboard. Please try again.');
-            });
-    } else {
-        // Fallback method for older browsers
-        copyTextFallback(outputText);
-    }
+        // Check if clipboard API is supported
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(outputText)
+                .then(() => {
+                    alert('Text copied to clipboard!');
+                })
+                .catch(err => {
+                    console.error('Error copying text to clipboard:', err);
+                    alert('Failed to copy text to clipboard. Please try again.');
+                });
+        } else {
+            // Fallback method for older browsers
+            copyTextFallback(outputText);
+        }
+    });
 });
 
 // Function to extract the playlist ID from the Spotify URL
