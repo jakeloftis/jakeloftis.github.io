@@ -1,14 +1,7 @@
-const clientId = '7b110782f78e4908a2ca192d11a72935'; // Replace this with your actual client ID
-const redirectUri = 'https://jakeloftis.github.io/spotify/playlist2text'; // Replace this with your registered redirect URI
+const accessToken = localStorage.getItem('spotify_access_token');
 
-// Step 1: Redirect the user to Spotify's authorization endpoint to get an access token
-if (!window.location.hash.includes('access_token')) {
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=playlist-read-private`;
-    window.location.href = authUrl;
-} else {
-    // Step 2: Extract the access token from the URL hash
-    const accessToken = new URLSearchParams(window.location.hash.substring(1)).get('access_token');
-
+if (accessToken) {
+    // Token is available; proceed with the application logic
     document.getElementById('generateList').addEventListener('click', async () => {
         const playlistUrl = document.getElementById('playlistUrl').value;
         const playlistId = extractPlaylistId(playlistUrl);
@@ -45,10 +38,10 @@ if (!window.location.hash.includes('access_token')) {
             alert('Error fetching playlist data. Please try again.');
         }
     });
-}
-
-function extractPlaylistId(url) {
-    const regex = /playlist\/([a-zA-Z0-9]+)(\?|$)/;
-    const match = url.match(regex);
-    return match ? match[1] : null;
+} else {
+    // No access token, redirect to authorization URL
+    const clientId = 'YOUR_SPOTIFY_CLIENT_ID'; // Replace with your actual client ID
+    const redirectUri = 'YOUR_REGISTERED_REDIRECT_URI'; // Replace with your registered redirect URI
+    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=playlist-read-private`;
+    window.location.href = authUrl;
 }
