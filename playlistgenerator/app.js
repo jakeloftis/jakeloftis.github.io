@@ -2,18 +2,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event listener for the "Generate List" button
     document.getElementById('generateList').addEventListener('click', () => {
         console.log('Generate List button clicked');
-        const playlistUrl = document.getElementById('playlistUrl').value;
-        const playlistId = extractPlaylistId(playlistUrl);
-
-        if (!playlistId) {
-            alert('Invalid playlist URL');
-            console.log('Invalid playlist URL:', playlistUrl);
+        
+        // Get the text content from the textarea
+        const songList = document.getElementById('songList').value.trim();
+        
+        if (!songList) {
+            alert('Please enter a list of songs.');
+            console.log('No songs entered.');
             return;
         }
 
-        // Output the playlist ID as an example (since no API call will be made)
-        const output = `Extracted Playlist ID: ${playlistId}`;
-        document.getElementById('output').textContent = output;
+        // Output the song list as-is
+        document.getElementById('output').textContent = songList;
     });
 
     // Add event listener for the "Copy to Clipboard" button
@@ -41,14 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
-// Function to extract the playlist ID from the Spotify URL
-function extractPlaylistId(url) {
-    const regex = /playlist\/([a-zA-Z0-9]+)(\?|$)/;
-    const match = url.match(regex);
-    console.log('Extracted Playlist ID:', match ? match[1] : 'None');
-    return match ? match[1] : null;
-}
 
 // Fallback function for older browsers
 function copyTextFallback(text) {
