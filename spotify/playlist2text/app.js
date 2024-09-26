@@ -46,6 +46,23 @@ if (accessToken) {
             alert('Error fetching playlist data. Please try again.');
         }
     });
+
+    // Add event listener for the "Copy to Clipboard" button
+    document.getElementById('copyText').addEventListener('click', () => {
+        const outputText = document.getElementById('output').textContent;
+
+        if (outputText) {
+            navigator.clipboard.writeText(outputText)
+                .then(() => {
+                    alert('Playlist text copied to clipboard!');
+                })
+                .catch(err => {
+                    console.error('Error copying text to clipboard:', err);
+                });
+        } else {
+            alert('No text to copy!');
+        }
+    });
 } else {
     // No access token, redirect to authorization URL
     const clientId = '7ed9c71c81c1491784d55516b4be7325'; // Replace this with your actual client ID
