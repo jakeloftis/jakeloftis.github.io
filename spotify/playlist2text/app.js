@@ -1,5 +1,5 @@
 const clientId = '7b110782f78e4908a2ca192d11a72935'; // Replace this with your actual client ID
-const redirectUri = 'https://jakeloftis.github.io/spotify/callback'; // Replace this with your registered redirect URI
+const redirectUri = 'https://jakeloftis.github.io/spotify/playlist2text'; // Replace this with your registered redirect URI
 
 // Step 1: Redirect the user to Spotify's authorization endpoint to get an access token
 if (!window.location.hash.includes('access_token')) {
