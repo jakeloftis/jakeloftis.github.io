@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Auth Callback</title>
+</head>
+<body>
+    <script>
+        // Extract the access token from the URL fragment
+        const hash = window.location.hash;
+        const params = new URLSearchParams(hash.substring(1)); // Remove the "#" and parse the parameters
+        const accessToken = params.get('access_token');
+
+        if (accessToken) {
+            // Store the access token in localStorage for use in other parts of the application
+            localStorage.setItem('spotify_access_token', accessToken);
+
+            // Redirect back to the main application page (index.html in this example)
+            window.location.href = '/';
+        } else {
+            // Handle error if the access token is not present
+            alert('Error: Access token not found. Please try again.');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
