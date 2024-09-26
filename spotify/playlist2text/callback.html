@@ -16,12 +16,12 @@
             // Store the access token in localStorage for use in other parts of the application
             localStorage.setItem('spotify_access_token', accessToken);
 
-            // Redirect back to the main application page (index.html in this example)
+            // Redirect back to the main application page
             window.location.href = '/spotify/playlist2text/index.html';
         } else {
             // Handle error if the access token is not present
             alert('Error: Access token not found. Please try again.');
-            window.location.href = '/';
+            window.location.href = '/spotify/playlist2text/index.html';
         }
     </script>
 </body>
