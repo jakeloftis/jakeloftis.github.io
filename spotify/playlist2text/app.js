@@ -41,7 +41,7 @@ if (accessToken) {
 } else {
     // No access token, redirect to authorization URL
     const clientId = 'YOUR_SPOTIFY_CLIENT_ID'; // Replace with your actual client ID
-    const redirectUri = 'YOUR_REGISTERED_REDIRECT_URI'; // Replace with your registered redirect URI
+    const redirectUri = 'https://mywebsite.com/spotify/playlist2text/callback.html';
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=playlist-read-private`;
     window.location.href = authUrl;
 }
