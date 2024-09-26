@@ -1,4 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Event listener for the "Generate List" button
+    document.getElementById('generateList').addEventListener('click', () => {
+        console.log('Generate List button clicked');
+        
+        // Placeholder logic: You can customize this to process input from the playlistUrl field
+        const playlistUrl = document.getElementById('playlistUrl').value;
+        
+        if (!playlistUrl) {
+            alert('Please paste a playlist URL.');
+            console.log('No URL provided.');
+            return;
+        }
+
+        // Placeholder: Mock generating song list (replace this with actual processing if needed)
+        const mockSongList = `Sample Song 1 - Artist 1\nSample Song 2 - Artist 2\nSample Song 3 - Artist 3`;
+
+        // Display the mock song list in the textarea
+        document.getElementById('songList').value = mockSongList;
+    });
+
     // Add event listener for the "Copy to Clipboard" button
     document.getElementById('copyText').addEventListener('click', () => {
         const outputText = document.getElementById('songList').value;
