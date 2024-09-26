@@ -1,24 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Event listener for the "Generate List" button
-    document.getElementById('generateList').addEventListener('click', () => {
-        console.log('Generate List button clicked');
-        
-        // Get the text content from the textarea
-        const songList = document.getElementById('songList').value.trim();
-        
-        if (!songList) {
-            alert('Please enter a list of songs.');
-            console.log('No songs entered.');
-            return;
-        }
-
-        // Output the song list as-is
-        document.getElementById('output').textContent = songList;
-    });
-
     // Add event listener for the "Copy to Clipboard" button
     document.getElementById('copyText').addEventListener('click', () => {
-        const outputText = document.getElementById('output').textContent;
+        const outputText = document.getElementById('songList').value;
 
         if (!outputText) {
             alert('No text to copy!');
