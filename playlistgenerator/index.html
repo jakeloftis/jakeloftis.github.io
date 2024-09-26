@@ -23,7 +23,7 @@
             margin-bottom: 20px;
         }
 
-        input[type="text"] {
+        input[type="text"], textarea {
             width: 80%;
             max-width: 500px;
             padding: 10px;
@@ -65,13 +65,13 @@
         }
 
         /* Add a subtle box shadow for depth */
-        input[type="text"], button, #output {
+        input[type="text"], textarea, button, #output {
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
 
         /* Responsive design for mobile */
         @media (max-width: 600px) {
-            input[type="text"], button, #output {
+            input[type="text"], textarea, button, #output {
                 width: 90%;
             }
 
@@ -88,6 +88,7 @@
 <body>
     <h1>Spotify Playlist Formatter</h1>
     <input type="text" id="playlistUrl" placeholder="Paste Spotify playlist link here">
+    <textarea id="songList" placeholder="Enter song names (one per line)" rows="10"></textarea>
     <button id="generateList">Generate List</button>
     <button id="copyText">Copy to Clipboard</button>
     <pre id="output"></pre>
