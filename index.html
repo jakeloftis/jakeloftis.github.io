@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>jakiepoo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #16171A;
+    --ink: #EDEDE6;
+    --muted: #8C8B84;
+    --accent: #8FAE93;
+    --line: #2A2B2E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 5rem 1.5rem 4rem;
+  }
+  header {
+    margin-bottom: 3.5rem;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 2.5rem;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5rem;
+  }
+  .tagline {
+    color: var(--muted);
+    font-size: 1rem;
+    margin: 0;
+  }
+  .pages {
+    border-top: 1px solid var(--line);
+  }
+  .page-entry {
+    display: block;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .page-entry .title {
+    font-size: 1.05rem;
+    font-weight: 500;
+  }
+  .page-entry:hover .title,
+  .page-entry:focus-visible .title {
+    color: var(--accent);
+  }
+  .page-entry:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  .empty {
+    color: var(--muted);
+    padding: 1.25rem 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .page-entry .title { transition: color 0.15s ease; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>jakiepoo</h1>
+      <p class="tagline">Notes, projects, and pages worth keeping.</p>
+    </header>
+    <div class="pages" id="pages">
+      <p class="empty">Loading…</p>
+    </div>
+  </div>
+
+  <script>
+    async function loadPages() {
+      const container = document.getElementById('pages');
+      try {
+        const res = await fetch('/manifest.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error('manifest.json not found');
+        const pages = await res.json();
+
+        if (!Array.isArray(pages) || pages.length === 0) {
+          container.innerHTML = '<p class="empty">Nothing published yet.</p>';
+          return;
+        }
+
+        container.innerHTML = pages.map(page => `
+          <a class="page-entry" href="/${page.slug}/">
+            <span class="title">${page.title}</span>
+          </a>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = '<p class="empty">Nothing published yet.</p>';
+      }
+    }
+
+    loadPages();
+  </script>
+</body>
+</html>
