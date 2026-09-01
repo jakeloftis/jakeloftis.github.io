@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bloodweb Draw — Perk Randomizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0c0b0e;
+    --panel: #17151a;
+    --panel-edge: #26232a;
+    --bone: #eae5db;
+    --muted: #8d8790;
+    --survivor: #e2a53d;
+    --survivor-dim: #6b5327;
+    --killer: #b5293f;
+    --killer-dim: #5c1a24;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(181,41,63,0.10), transparent 60%),
+      radial-gradient(ellipse 900px 500px at 85% 110%, rgba(226,165,61,0.08), transparent 60%),
+      var(--bg);
+    color:var(--bone);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .grain{
+    position:fixed; inset:0; pointer-events:none; opacity:0.05; mix-blend-mode:overlay; z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{position:relative; z-index:1; max-width:980px; margin:0 auto; padding:48px 20px 80px;}
+
+  header{text-align:left; margin-bottom:36px;}
+  .kicker{font-size:13px; color:var(--muted); letter-spacing:0.02em;}
+  h1{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:clamp(42px, 8vw, 68px);
+    line-height:0.95;
+    margin:6px 0 10px;
+    letter-spacing:0.01em;
+    background:linear-gradient(180deg,#fff, #c9c2b8 70%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  header p{color:var(--muted); max-width:540px; font-size:15px; line-height:1.55; margin:0;}
+
+  /* role toggle */
+  .toggle{
+    display:inline-flex; margin-top:28px; border-radius:999px; background:var(--panel);
+    border:1px solid var(--panel-edge); padding:4px; gap:4px;
+  }
+  .toggle button{
+    font-family:'Bebas Neue', sans-serif; letter-spacing:0.03em; font-size:18px;
+    padding:10px 26px; border-radius:999px; border:none; background:transparent; color:var(--muted);
+    cursor:pointer; transition:background .2s ease, color .2s ease;
+  }
+  .toggle button.active.survivor{ background:var(--survivor); color:#1a1305; }
+  .toggle button.active.killer{ background:var(--killer); color:#fff; }
+
+  .controls{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;
+    margin:32px 0 20px;
+  }
+  .roll-count{font-size:13px; color:var(--muted);}
+  .roll-count b{color:var(--bone); font-weight:600;}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'Inter'; font-weight:600; font-size:14px;
+    padding:11px 20px; border-radius:8px; border:1px solid var(--panel-edge);
+    background:var(--panel); color:var(--bone); cursor:pointer;
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  .btn:hover{border-color:var(--accent, #444);}
+  .btn:active{transform:scale(0.97);}
+  .btn svg{width:15px; height:15px; flex:none;}
+  body.survivor .btn.primary{ --accent:var(--survivor); border-color:var(--survivor-dim); }
+  body.killer .btn.primary{ --accent:var(--killer); border-color:var(--killer-dim); }
+  body.survivor .btn.primary:hover{ box-shadow:0 0 0 1px var(--survivor) inset; }
+  body.killer .btn.primary:hover{ box-shadow:0 0 0 1px var(--killer) inset; }
+
+  .grid{
+    display:grid; grid-template-columns:repeat(2, 1fr); gap:16px;
+  }
+  @media (max-width:720px){ .grid{grid-template-columns:1fr;} }
+
+  .card{
+    background:var(--panel); border:1px solid var(--panel-edge); border-radius:14px;
+    padding:16px; display:flex; flex-direction:column; gap:12px;
+    animation:rise .35s ease both;
+  }
+  @keyframes rise{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .card-top{ display:flex; gap:14px; align-items:flex-start; }
+
+  .portrait{
+    width:84px; height:84px; flex:none; border-radius:10px; overflow:hidden;
+    border:1px solid var(--panel-edge);
+  }
+  .portrait svg, .portrait img{width:100%; height:100%; display:block; object-fit:cover;}
+  .perk-badge{
+    width:84px; height:84px; flex:none;
+    border-radius:10px; overflow:hidden; border:1px solid var(--panel-edge);
+    box-shadow:0 2px 10px rgba(0,0,0,0.35);
+  }
+  .perk-badge svg, .perk-badge img{width:100%; height:100%; display:block; object-fit:cover;}
+
+  .meta{ display:flex; flex-direction:column; gap:3px; min-width:0; flex:1; }
+  .perk-name{ font-weight:700; font-size:17px; line-height:1.25; }
+  .char-name{ font-size:12.5px; color:var(--muted); }
+
+  .desc{
+    font-size:13.5px; line-height:1.55; color:#cfc9c0;
+    background:rgba(255,255,255,0.02); border:1px solid var(--panel-edge);
+    border-left:3px solid var(--accent, var(--survivor));
+    border-radius:6px; padding:10px 12px; flex:1;
+  }
+  body.survivor .desc{ --accent:var(--survivor); }
+  body.killer .desc{ --accent:var(--killer); }
+
+  .card .reroll{
+    width:100%; justify-content:center; margin-top:auto;
+  }
+  .card .reroll svg{ transition:transform .35s ease; }
+  .card .reroll.spin svg{ transform:rotate(360deg); }
+
+  footer{ margin-top:44px; font-size:12.5px; color:var(--muted); line-height:1.6; border-top:1px solid var(--panel-edge); padding-top:20px; }
+  footer code{ background:var(--panel); padding:1px 6px; border-radius:4px; color:var(--bone); }
+</style>
+</head>
+<body class="survivor">
+<div class="grain"></div>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">FOG WHISPERS</div>
+    <h1>Bloodweb Draw</h1>
+    <p>Pull four perks from the Fog. Not happy with one? Reroll it on its own — as many times as you like — or clear the whole board.</p>
+
+    <div class="toggle" role="tablist" aria-label="Choose perk list">
+      <button class="active survivor" id="tab-survivor" data-role="survivor">Survivor</button>
+      <button class="killer" id="tab-killer" data-role="killer">Killer</button>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="roll-count">Perks drawn from a pool of <b id="pool-size">0</b>.</div>
+    <button class="btn primary" id="reroll-all">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      Reroll all four
+    </button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   DATA — edit these arrays to add, remove, re-map, or correct
+   perks. Each entry: { perk, character, desc }
+--------------------------------------------------------- */
+const SURVIVOR_PERKS = [
+{perk:"Ace in the Hole", character:"Ace Visconti", desc:"Keep add-ons found in chests after the trial ends, with better odds of rare finds."},
+{perk:"Adrenaline", character:"Meg Thomas", desc:"Heals a health state and grants a burst of speed the moment the last generator is finished."},
+{perk:"Aftercare", character:"Jeff Johansen", desc:"Builds a bond with anyone you heal or who heals you, sharing your auras afterward."},
+{perk:"Alert", character:"Feng Min", desc:"Reveals the killer's aura briefly whenever they damage a generator or breakable wall."},
+{perk:"Any Means Necessary", character:"Yui Kimura", desc:"Stand a dropped pallet back up to reuse it once."},
+{perk:"Appraisal", character:"Elodie Rakoto", desc:"Search a chest quickly for a guaranteed better item."},
+{perk:"Autodidact", character:"Adam Francis", desc:"Healing starts slower but builds stacks that speed up future heals and skill checks."},
+{perk:"Babysitter", character:"Steve Harrington", desc:"Shows the killer's aura to the survivor you unhook and hides their scratch marks briefly."},
+{perk:"Background Player", character:"Renato Lyra", desc:"Grants a burst of speed to rush toward a teammate who's just been downed."},
+{perk:"Balanced Landing", character:"Nea Karlsson", desc:"Reduces fall stagger and grants a burst of speed after falling from a height."},
+{perk:"Bardic Inspiration", character:"Aestri Yazar & Baermar Uraz", desc:"Boosts nearby survivors' action speed for a short time after a great skill check."},
+{perk:"Better Together", character:"Nancy Wheeler", desc:"Reveals a nearby survivor's aura while you're both working the same generator."},
+{perk:"Better than New", character:"Rebecca Chambers", desc:"Fully healing someone grants both of you a stack of bonus healing speed to use later."},
+{perk:"Bite the Bullet", character:"Leon S. Kennedy", desc:"Muffles your sounds and shrinks the killer's terror radius while they're carrying you."},
+{perk:"Blast Mine", character:"Jill Valentine", desc:"Rig a generator so kicking it blinds and stuns the killer."},
+{perk:"Blood Pact", character:"Cheryl Mason", desc:"Links you to the killer's obsession, periodically revealing each other's aura."},
+{perk:"Blood Rush", character:"Renato Lyra", desc:"Consumes your Broken status to instantly recover from the dying state, once."},
+{perk:"Boil Over", character:"Kate Denson", desc:"Increases the wiggle effect and hides your aura from the killer while you're carried."},
+{perk:"Bond", character:"Dwight Fairfield", desc:"Continuously shows the aura of survivors near you."},
+{perk:"Boon: Circle of Healing", character:"Mikaela Reid", desc:"Bless a totem to speed up healing for everyone inside its radius."},
+{perk:"Boon: Dark Theory", character:"Yoichi Asakawa", desc:"Bless a totem to boost survivors' action speeds inside its radius."},
+{perk:"Boon: Exponential", character:"Mikaela Reid", desc:"Bless a totem so dying survivors inside its radius recover partway toward injured on their own."},
+{perk:"Boon: Illumination", character:"Alan Wake", desc:"Bless a totem that blinds and reveals the killer if they wander close."},
+{perk:"Boon: Shadow Step", character:"Mikaela Reid", desc:"Bless a totem that mutes scratch marks and pools of blood inside its radius."},
+{perk:"Borrowed Time", character:"Bill Overbeck", desc:"Grants Endurance to a survivor the moment you unhook them."},
+{perk:"Botany Knowledge", character:"Claudette Morel", desc:"Speeds up healing and makes medkits go further."},
+{perk:"Breakdown", character:"Jeff Johansen", desc:"Destroys a hook after you're unhooked from it, forcing the killer to find another."},
+{perk:"Breakout", character:"Yui Kimura", desc:"Speeds up wiggling for a nearby survivor while you're close to the one carrying them."},
+{perk:"Buckle Up", character:"Ash Williams", desc:"Reveals the killer's aura to a healthy survivor who picks someone up, and vice versa."},
+{perk:"Built to Last", character:"Felix Richter", desc:"Recharges an empty item's charges once per trial."},
+{perk:"Calm Spirit", character:"Jake Park", desc:"Stops you from screaming or startling crows."},
+{perk:"Camaraderie", character:"Steve Harrington", desc:"Extends hook struggle time while another survivor stands near your hook."},
+{perk:"Champion of Light", character:"Alan Wake", desc:"Blessed totems glow and gain extended range."},
+{perk:"Chemical Trap", character:"Ellen Ripley", desc:"Rig a generator so kicking it injures and reveals the killer."},
+{perk:"Clairvoyance", character:"Mikaela Reid", desc:"Briefly reveals nearby items, chests, and totems on the map."},
+{perk:"Clean Break", character:"Taurie Cain", desc:"A fast vault hides your scratch marks for a short time afterward."},
+{perk:"Corrective Action", character:"Jonah Vasquez", desc:"Softens the penalty of a bad skill check while working a generator alongside others."},
+{perk:"Counterforce", character:"Jill Valentine", desc:"Speeds up cleansing and blessing totems, and reveals dull totems when you cleanse a hex."},
+{perk:"Cut Loose", character:"Thalita Lyra", desc:"Removes the exhaustion penalty right after leaving a locker with an exhaustion perk active."},
+{perk:"Dance With Me", character:"Kate Denson", desc:"Removes your scratch marks briefly the moment you vault or exit a locker."},
+{perk:"Dark Sense", character:"All Survivors", desc:"Reveals the killer's aura for a few seconds each time a generator is completed."},
+{perk:"Dead Hard", character:"David King", desc:"Spends a health state's worth of Endurance to dash forward and dodge a hit."},
+{perk:"Deadline", character:"Alan Wake", desc:"Slows the Entity's progress on whichever survivor has the fewest hook stages left."},
+{perk:"Deception", character:"Elodie Rakoto", desc:"Fake a vault or locker sound to mislead the killer about your position."},
+{perk:"Decisive Strike", character:"Laurie Strode", desc:"Stuns the killer with a skill check if they pick you up soon after unhooking you."},
+{perk:"Déjà Vu", character:"All Survivors", desc:"Reveals generator auras and highlights the most isolated one early in the trial."},
+{perk:"Deliverance", character:"Adam Francis", desc:"Unhook yourself once, though you leave the hook faster than normal afterward."},
+{perk:"Desperate Measures", character:"Felix Richter", desc:"Boosts your healing and repair speed for every injured, dying, or hooked survivor."},
+{perk:"Detective's Hunch", character:"David Tapp", desc:"Reveals nearby chest, totem, and generator auras after completing an objective."},
+{perk:"Distortion", character:"Jeff Johansen", desc:"Blocks the killer's aura-reading perks against you a limited number of times."},
+{perk:"Diversion", character:"Adam Francis", desc:"Throw a stone to create a loud noise notification some distance away."},
+{perk:"Dramaturgy", character:"Nicolas Cage", desc:"Delays your death by the Entity once, buying extra time while dying."},
+{perk:"Empathic Connection", character:"Yoichi Asakawa", desc:"Shows the obsession's aura to you whenever they're in a chase."},
+{perk:"Empathy", character:"Claudette Morel", desc:"Continuously shows the aura of injured, dying, or hooked survivors."},
+{perk:"Exultation", character:"Trevor Belmont", desc:"Rewards a successful juke at a pallet with a brief burst of speed."},
+{perk:"Eyes of Belmont", character:"Trevor Belmont", desc:"Reveals the killer's aura for a few seconds after they down or hook a survivor."},
+{perk:"Fast Track", character:"Lee Yun-jin", desc:"Builds toward a bonus that speeds up the next generator completed after altruistic actions."},
+{perk:"Finesse", character:"Lara Croft", desc:"Softens the noise and difficulty of a great skill check on vaults and lockpicking."},
+{perk:"Fixated", character:"Meg Thomas", desc:"Moves faster while healthy and always shows you your own scratch marks."},
+{perk:"Flashbang", character:"Leon S. Kennedy", desc:"Craft a flashbang at a generator to blind the killer."},
+{perk:"Flip-Flop", character:"Ash Williams", desc:"Converts some of your recovery progress into wiggle progress while downed."},
+{perk:"Fogwise", character:"Vittorio Toscano", desc:"Periodically reveals the aura of the nearest item on the map."},
+{perk:"For the People", character:"Zarina Kassir", desc:"Instantly heal another survivor to full at the cost of one of your own health states."},
+{perk:"Friendly Competition", character:"Thalita Lyra", desc:"Speeds up nearby survivors' repairs when you join their generator."},
+{perk:"Hardened", character:"Lara Croft", desc:"Softens the penalty of your next failed skill check, then needs a charge to recover."},
+{perk:"Head On", character:"Jane Romero", desc:"Stun the killer by bursting out of a locker as they pass by."},
+{perk:"Hope", character:"All Survivors", desc:"Grants a permanent boost to your movement speed once the exit gates are powered."},
+{perk:"Hyperfocus", character:"Rebecca Chambers", desc:"Chaining good skill checks grows the success zone and repair speed further."},
+{perk:"Inner Focus", character:"Haddie Kaur", desc:"Reveals nearby scratch marks, blood pools, and the source of grunts of pain."},
+{perk:"Inner Strength", character:"Nancy Wheeler", desc:"Cleansing or blessing a totem lets you heal yourself quickly inside a locker afterward."},
+{perk:"Invocation: Treacherous Crows", character:"Taurie Cain", desc:"A group ritual that curses the killer with a status effect, at a steep personal cost."},
+{perk:"Invocation: Weaving Spiders", character:"Sable Ward", desc:"A group ritual that instantly repairs part of a generator, at a steep personal cost."},
+{perk:"Iron Will", character:"Jake Park", desc:"Reduces or removes the sound of your pain grunts while injured."},
+{perk:"Kindred", character:"Dwight Fairfield", desc:"Reveals the killer's aura to everyone while a survivor is on a hook."},
+{perk:"Leader", character:"Dwight Fairfield", desc:"Speeds up nearby survivors' actions while you work alongside them."},
+{perk:"Left Behind", character:"Bill Overbeck", desc:"Reveals the hatch's aura once you're the last survivor left."},
+{perk:"Light-Footed", character:"Ellen Ripley", desc:"Reduces the volume of your running footsteps and other noises."},
+{perk:"Lightweight", character:"Generic", desc:"Shortens the distance and time your scratch marks stay visible."},
+{perk:"Lithe", character:"Feng Min", desc:"Grants a burst of speed after a fast vault, on an exhaustion cooldown."},
+{perk:"Low Profile", character:"Ada Wong", desc:"Prevents pools of blood and grunts of pain while crouched and injured."},
+{perk:"Lucky Break", character:"Yui Kimura", desc:"Leaves no blood trail or scratch marks for a limited time while injured."},
+{perk:"Lucky Star", character:"Ellen Ripley", desc:"Hides your aura from certain killer perks that would normally reveal it."},
+{perk:"Made for This", character:"Gabriel Soma", desc:"Grants a small permanent speed boost while injured, which grows after altruistic actions."},
+{perk:"Mettle of Man", character:"Ash Williams", desc:"Taking protection hits builds toward Endurance that blocks a hit outright."},
+{perk:"Mirrored Illusion", character:"Aestri Yazar & Baermar Uraz", desc:"Swap places with a decoy locker to fake your location."},
+{perk:"Moment of Glory", character:"Trevor Belmont", desc:"Grants a temporary healing speed boost after cleansing or blessing a totem."},
+{perk:"No Mither", character:"David King", desc:"Always spawn injured and unable to heal, but immune to Exposed with better recovery and crawl speed."},
+{perk:"No One Left Behind", character:"Generic", desc:"Speeds up unhooking and grants bonus points once the exit gates are powered."},
+{perk:"Object of Obsession", character:"Laurie Strode", desc:"Reveals the killer's aura to you when they look your way, and yours to them under certain conditions."},
+{perk:"Off the Record", character:"Zarina Kassir", desc:"Grants Endurance and silences your sounds for a while after being unhooked."},
+{perk:"Open-Handed", character:"Ace Visconti", desc:"Increases the range of your own and other survivors' aura-reading perks."},
+{perk:"Overcome", character:"Yui Kimura", desc:"Grants a burst of speed after taking a hit, on an exhaustion cooldown."},
+{perk:"Overzealous", character:"Haddie Kaur", desc:"Cleansing or blessing a totem speeds up your next generator repair."},
+{perk:"Parental Guidance", character:"Yoichi Asakawa", desc:"Grants Endurance and quieter pain grunts to a survivor you unhook."},
+{perk:"Pharmacy", character:"Quentin Smith", desc:"Always know where a chest is, and open it silently."},
+{perk:"Plot Twist", character:"Nicolas Cage", desc:"Feign death when downed to fully recover on the spot, once per trial."},
+{perk:"Plunderer's Instinct", character:"Ace Visconti", desc:"Improves chest loot odds and reveals chest auras."},
+{perk:"Poised", character:"Jane Romero", desc:"Hides your scratch marks and boosts action speed briefly after completing a generator."},
+{perk:"Potential Energy", character:"Vittorio Toscano", desc:"Working other generators charges a bonus that resists regression on a generator later."},
+{perk:"Power Struggle", character:"Elodie Rakoto", desc:"Struggle free of the killer's grasp near a pallet, dropping it on them."},
+{perk:"Premonition", character:"Generic", desc:"Warns you with a directional cue when the killer is looking your way at range."},
+{perk:"Prove Thyself", character:"Dwight Fairfield", desc:"Speeds up generator repairs when working together with others on the same generator."},
+{perk:"Quick & Quiet", character:"Meg Thomas", desc:"Enter lockers or vault windows silently while being chased."},
+{perk:"Quick Gambit", character:"Vittorio Toscano", desc:"Speeds up your repair while another survivor is being chased nearby."},
+{perk:"Reactive Healing", character:"Ada Wong", desc:"Automatically heals you a little whenever another survivor is fully healed elsewhere."},
+{perk:"Reassurance", character:"Rebecca Chambers", desc:"Pauses a hooked survivor's sacrifice progress by standing near their hook."},
+{perk:"Red Herring", character:"Zarina Kassir", desc:"Plants fake scratch marks and a false terror-radius cue at another location."},
+{perk:"Repressed Alliance", character:"Cheryl Mason", desc:"Temporarily blocks a generator so the killer can't regress it."},
+{perk:"Residual Manifest", character:"Haddie Kaur", desc:"Blinding the killer also afflicts them with Blindness for a while."},
+{perk:"Resilience", character:"All Survivors", desc:"Increases your action speed while injured."},
+{perk:"Resurgence", character:"Jill Valentine", desc:"Unhooking a survivor grants them a burst of healing progress."},
+{perk:"Rookie Spirit", character:"Leon S. Kennedy", desc:"Reveals nearby generator auras and speeds up your first repair attempt on one."},
+{perk:"Saboteur", character:"Jake Park", desc:"Sabotage hooks from farther away, and see hook auras."},
+{perk:"Scavenger", character:"Gabriel Soma", desc:"Recharges toolboxes by scavenging parts while repairing generators."},
+{perk:"Scene Partner", character:"Nicolas Cage", desc:"Occasionally fakes a false terror-radius cue for the killer, misleading their tracking."},
+{perk:"Second Wind", character:"Steve Harrington", desc:"Taking a protection hit grants a self-heal charge to use later without a medkit."},
+{perk:"Self-Care", character:"Claudette Morel", desc:"Heal yourself without a medkit, more slowly than normal."},
+{perk:"Self-Preservation", character:"Lee Yun-jin", desc:"Suppresses your scratch marks, blood, and grunts briefly whenever a nearby survivor is hit."},
+{perk:"Shoulder the Burden", character:"Taurie Cain", desc:"Take on a hooked survivor's next hook-stage risk in exchange for reduced struggle time."},
+{perk:"Slippery Meat", character:"Generic", desc:"Improves your odds of escaping the killer's grasp, with a guaranteed first attempt out of a trap."},
+{perk:"Small Game", character:"Generic", desc:"Reveals nearby trap and totem auras and lets you disarm them faster."},
+{perk:"Smash Hit", character:"Lee Yun-jin", desc:"Stunning the killer with a pallet grants a burst of speed."},
+{perk:"Sole Survivor", character:"Laurie Strode", desc:"Hides your aura from the killer more effectively the fewer survivors remain."},
+{perk:"Solidarity", character:"Jane Romero", desc:"Healing another survivor also heals a portion of your own damage at the same time."},
+{perk:"Soul Guard", character:"Cheryl Mason", desc:"Grants Endurance when you recover from dying, if you're afflicted by the Entity."},
+{perk:"Specialist", character:"Lara Croft", desc:"Improves lockpicking range and speed and lets you lock lockers behind you."},
+{perk:"Spine Chill", character:"Nea Karlsson", desc:"Warns you when the killer is looking your way, and boosts your speed briefly."},
+{perk:"Sprint Burst", character:"Meg Thomas", desc:"Grants a burst of speed when you start running, on an exhaustion cooldown."},
+{perk:"Stake Out", character:"David Tapp", desc:"Improves great-skill-check odds; chaining them fills a bonus token."},
+{perk:"Still Sight", character:"Aestri Yazar & Baermar Uraz", desc:"Standing still for a while reveals nearby survivors' auras to you."},
+{perk:"Streetwise", character:"Nea Karlsson", desc:"Reduces how quickly items consume charges while you're injured."},
+{perk:"Strength in Shadows", character:"Sable Ward", desc:"Grants a burst of speed after breaking line of sight from the killer while crouched."},
+{perk:"Teamwork: Collective Stealth", character:"Renato Lyra", desc:"Grants stealth benefits to a teammate standing near you."},
+{perk:"Teamwork: Power of Two", character:"Thalita Lyra", desc:"Grants you and a nearby teammate a shared speed boost after a triggering action."},
+{perk:"Technician", character:"Feng Min", desc:"Reduces the chance and volume of loud repair noises and regression skill checks."},
+{perk:"Tenacity", character:"David Tapp", desc:"Crawl faster while downed and recover a little on your own."},
+{perk:"This Is Not Happening", character:"Generic", desc:"Enlarges the success zone on skill checks, more so the more injured you are."},
+{perk:"Troubleshooter", character:"Gabriel Soma", desc:"Kicking or blocking a generator you were just repairing also briefly blocks it for the killer."},
+{perk:"Unbreakable", character:"Bill Overbeck", desc:"Recover from the dying state on your own, once per trial."},
+{perk:"Up the Ante", character:"Ace Visconti", desc:"Improves your own and nearby survivors' odds on skill checks."},
+{perk:"Urban Evasion", character:"Nea Karlsson", desc:"Moves faster while crouched."},
+{perk:"Vigil", character:"Quentin Smith", desc:"Speeds up recovery from status effects for you and nearby survivors."},
+{perk:"Visionary", character:"Felix Richter", desc:"Reveals generator auras within a set range at the start of the trial."},
+{perk:"Wake Up!", character:"Quentin Smith", desc:"Speeds up opening exit gates when you're near one alone."},
+{perk:"We'll Make It", character:"All Survivors", desc:"Boosts healing speed for a short time after unhooking a survivor."},
+{perk:"We're Gonna Live Forever", character:"David King", desc:"Speeds up recovering from dying and eases skill checks right after unhooking someone."},
+{perk:"Wicked", character:"Sable Ward", desc:"Gives a chance to enter a Mori-immune state after unhooking near death."},
+{perk:"Windows of Opportunity", character:"Kate Denson", desc:"Reveals the aura of nearby pallets, windows, and breakable walls."},
+{perk:"Wiretap", character:"Ada Wong", desc:"Rig a completed generator to reveal the killer's aura when they approach it."},
+];
+
+const KILLER_PERKS = [
+{perk:"A Nurse's Calling", character:"Sally Smithson", desc:"Reveals the aura of survivors who are healing within range."},
+{perk:"Agitation", character:"Evan MacMillan", desc:"Increases your movement speed while carrying a survivor and widens the carry-noise radius."},
+{perk:"Alien Instinct", character:"The Xenomorph", desc:"Hooking a survivor briefly reveals the aura of the two survivors farthest from you."},
+{perk:"All-Shaking Thunder", character:"Portia Maye", desc:"Startles and reveals survivors within a wide radius after using your power."},
+{perk:"Awakened Awareness", character:"Albert Wesker", desc:"Reveals a survivor's aura briefly the first time they enter your terror radius."},
+{perk:"Bamboozle", character:"Kenneth Chase", desc:"Increases vault speed and briefly blocks a window right after you vault it."},
+{perk:"Barbecue & Chilli", character:"Bubba Sawyer", desc:"Reveals the aura of survivors far from a hook after hooking someone, plus bonus points."},
+{perk:"Batteries Included", character:"Charles Lee Ray", desc:"Reveals item auras and lets you charge your power near generators."},
+{perk:"Beast of Prey", character:"Anna", desc:"Gain Bloodlust faster after a special hit or status is applied to a survivor."},
+{perk:"Bitter Murmur", character:"Generic", desc:"Reveals survivor auras briefly each time a generator is completed."},
+{perk:"Blood Echo", character:"Kazan Yamaoka", desc:"Grants Haste and Exposed to a recovering survivor, and shows you their aura."},
+{perk:"Blood Warden", character:"Freddy Krueger", desc:"Blocks the exit gates for a while and reveals survivor auras once they're powered."},
+{perk:"Bloodhound", character:"Philip Ojomo", desc:"Makes blood trails from injured survivors more visible and last longer."},
+{perk:"Brutal Strength", character:"Evan MacMillan", desc:"Increases the speed of breaking pallets and breakable walls."},
+{perk:"Call of Brine", character:"Onryō", desc:"Regressing generators regress faster and trigger a loud notification when kicked."},
+{perk:"Corrupt Intervention", character:"Adiris", desc:"Blocks the farthest generators from being worked on at the start of the trial."},
+{perk:"Coulrophobia", character:"Jeffrey Hawk", desc:"Slows healing for survivors inside your terror radius."},
+{perk:"Coup de Grâce", character:"Charlotte & Victor Deshayes", desc:"Builds stacks during chases that grant one longer lunge to use later."},
+{perk:"Cruel Limits", character:"The Demogorgon", desc:"Blocks a traversal shortcut for survivors after you use your power near it."},
+{perk:"Dark Arrogance", character:"Vecna", desc:"Casting your power builds toward a bonus effect for your next cast."},
+{perk:"Dark Devotion", character:"Adiris", desc:"Your terror radius follows your obsession instead of you during a chase with them."},
+{perk:"Darkness Revealed", character:"The Dredge", desc:"Reveals generator auras from inside lockers you can teleport to at night."},
+{perk:"Dead Man's Switch", character:"The Singularity", desc:"Blocks a generator from progressing when the survivor working it is interrupted."},
+{perk:"Deathbound", character:"Pyramid Head", desc:"Links your aura to a healing survivor's whenever you're both near the same spot."},
+{perk:"Deerstalker", character:"Generic", desc:"Reveals the aura of crawling, dying survivors for longer."},
+{perk:"Discordance", character:"Frank Morrison", desc:"Reveals which generators have two or more survivors working on them together."},
+{perk:"Dissolution", character:"The Dredge", desc:"Blocks a locker's teleport destination briefly after you leave it."},
+{perk:"Distressing", character:"Generic", desc:"Increases the size of your terror radius."},
+{perk:"Dominance", character:"Dracula", desc:"Briefly reveals a survivor's aura after successfully mind-gaming them at a loop."},
+{perk:"Dragon's Grip", character:"Talbot Grimes", desc:"Marks a kicked generator so the next survivor to touch it is Exposed and revealed."},
+{perk:"Dying Light", character:"Michael Myers", desc:"Slows other survivors' actions the more the obsession is hooked, while empowering the obsession."},
+{perk:"Enduring", character:"Michael Myers", desc:"Reduces how long a pallet stun affects you."},
+{perk:"Eruption", character:"Nemesis", desc:"Downing a survivor regresses nearby generators and blocks progress for anyone who abandons them."},
+{perk:"Fearmonger", character:"The Demogorgon", desc:"Blocks survivors near you from seeing generator auras."},
+{perk:"Fire Up", character:"Freddy Krueger", desc:"Speeds up breaking, kicking, and vaulting actions as the trial goes on."},
+{perk:"Forced Hesitation", character:"HUX-A7-13", desc:"A landed special attack grants a temporary blocking effect on a nearby generator."},
+{perk:"Forced Penance", character:"Pyramid Head", desc:"Marks survivors who take protection hits or hit skill checks, revealing their aura when hooked."},
+{perk:"Forever Entwined", character:"Ken Kaneki", desc:"Hooking survivors in different areas builds toward a map-wide aura reveal."},
+{perk:"Franklin's Demise", character:"Bubba Sawyer", desc:"Hitting a survivor knocks their item away and starts draining its charges."},
+{perk:"Friends 'til the End", character:"Charles Lee Ray", desc:"Hooking the obsession passes the obsession status to their unhooker and empowers you."},
+{perk:"Furtive Chase", character:"Danny Johnson", desc:"Hooking a survivor makes them the obsession and shortens future hook progress against them."},
+{perk:"Game Afoot", character:"Adriana Imai", desc:"Grants a burst of speed when you start chasing a new survivor right after downing one."},
+{perk:"Gearhead", character:"Caleb Quinn", desc:"Reveals the aura of survivors who fail a difficult skill check."},
+{perk:"Genetic Limits", character:"HUX-A7-13", desc:"Reduces how much exhaustion-recovery perks help survivors as the trial goes on."},
+{perk:"Grim Embrace", character:"Danny Johnson", desc:"Hooking a different survivor for the first time blocks every generator briefly."},
+{perk:"Haywire", character:"William Afton", desc:"Slows the progress of powered exit gates while survivors are near them."},
+{perk:"Help Wanted", character:"William Afton", desc:"Compromises a generator so finishing it shortens your next attack cooldowns."},
+{perk:"Hex: Blood Favour", character:"Talbot Grimes", desc:"While active, hitting a survivor blocks nearby hooks from being sabotaged for a while."},
+{perk:"Hex: Crowd Control", character:"Ji-Woon Hak", desc:"While active, breaking a window blocks it for the rest of the trial."},
+{perk:"Hex: Devour Hope", character:"Lisa Sherwood", desc:"While active, unnoticed hooks stack a bonus that grants Exposed and eventually a Mori."},
+{perk:"Hex: Face the Darkness", character:"Tarhos Kovács", desc:"While active, periodically forces a random survivor to scream and reveal their aura."},
+{perk:"Hex: Fortune's Fool", character:"Generic", desc:"While active, survivors near pallets or windows you're chasing them through become Hindered."},
+{perk:"Hex: Haunted Ground", character:"Rin Yamaoka", desc:"While active, cleansing this totem grants you Haste and Exposes every survivor briefly."},
+{perk:"Hex: Huntress Lullaby", character:"Anna", desc:"While active, stacks up to silence skill-check sounds and worsen skill checks for survivors."},
+{perk:"Hex: No One Escapes Death", character:"Generic", desc:"While active once the exit gates are powered, all survivors become Exposed."},
+{perk:"Hex: Nothing But Misery", character:"Ken Kaneki", desc:"While active, hitting the obsession stacks a growing penalty to their repair speed."},
+{perk:"Hex: Pentimento", character:"Carmina Mora", desc:"Relights a destroyed hex totem with a new effect, tied to boon totem cleanses."},
+{perk:"Hex: Retribution", character:"Caleb Quinn", desc:"While active, cleansing a dull totem reveals your aura and briefly Exposes the cleanser."},
+{perk:"Hex: Ruin", character:"Lisa Sherwood", desc:"While active, unattended generators regress on their own and trigger harder skill checks."},
+{perk:"Hex: The Third Seal", character:"Anna", desc:"While active, injured survivors lose the ability to see their own aura-reading effects."},
+{perk:"Hex: Thrill of the Hunt", character:"Generic", desc:"While active, totems are slower to cleanse or bless, and reward bonus points for trying."},
+{perk:"Hex: Two Can Play", character:"Charles Lee Ray", desc:"While active, gains a stacking speed boost each time a generator regresses."},
+{perk:"Hex: Undying", character:"The Blight", desc:"While active, keeps your other hex totems' auras visible and relocates a cleansed hex to a dull totem."},
+{perk:"Hex: Wretched Fate", character:"Dracula", desc:"While active, marks generators near cleansed dull totems and punishes survivors who repair them."},
+{perk:"Hoarder", character:"Charlotte & Victor Deshayes", desc:"Reveals chest auras and draws survivors toward them with an illusory noise."},
+{perk:"Hubris", character:"Tarhos Kovács", desc:"Missing an attack on a mid-vaulting survivor stuns them briefly instead of you."},
+{perk:"Human Greed", character:"Dracula", desc:"Reveals chest auras and adds extra chests with basic loot."},
+{perk:"Hysteria", character:"Nemesis", desc:"Muffles injured survivors' grunts of pain but makes their heartbeat audible to you instead."},
+{perk:"I'm All Ears", character:"Sally Smithson", desc:"Grants a longer lunge after a survivor uses a locker or vaults near you."},
+{perk:"Infectious Fright", character:"Adiris", desc:"Downing a survivor makes nearby survivors scream and reveal their location."},
+{perk:"Insidious", character:"Generic", desc:"Standing still for a while grants the Undetectable status."},
+{perk:"Iron Grasp", character:"Generic", desc:"Increases how long it takes a carried survivor to wiggle free."},
+{perk:"Iron Maiden", character:"Anna", desc:"Speeds up opening lockers and reveals a survivor's aura when they exit one."},
+{perk:"Knock Out", character:"Bubba Sawyer", desc:"Hides a downed survivor's aura briefly and slows their crawl speed after a basic hit."},
+{perk:"Languid Touch", character:"Vecna", desc:"Silences the interruption sound when you hit a survivor mid-skill-check."},
+{perk:"Lethal Pursuer", character:"Nemesis", desc:"Reveals all survivors' auras briefly and extends your own aura-read range at the start of the trial."},
+{perk:"Leverage", character:"Adriana Imai", desc:"Unhooking a survivor near you slows their healing and repair speed for a while."},
+{perk:"Lightborn", character:"Max Thompson Jr.", desc:"Blocks flashlight and flashbang blinds entirely and reveals who tried to blind you."},
+{perk:"Machine Learning", character:"HUX-A7-13", desc:"Kicking a generator you haven't touched recently regresses it further than normal."},
+{perk:"Mad Grit", character:"Frank, Julie, Susie, Joey", desc:"Lets you hit other nearby survivors without interrupting the one you're carrying."},
+{perk:"Make Your Choice", character:"Amanda Young", desc:"Downing a survivor who attempts a solo unhook briefly Exposes and reveals them."},
+{perk:"Merciless Storm", character:"Onryō", desc:"Kicking a generator triggers a skill-check gauntlet for whoever is repairing it."},
+{perk:"Mindbreaker", character:"The Demogorgon", desc:"Slows survivors while they stand still on a generator."},
+{perk:"Monitor & Abuse", character:"Herman Carter", desc:"Shrinks your terror radius outside of chases and expands it during one."},
+{perk:"Nemesis", character:"Kazan Yamaoka", desc:"Marks the obsession; hitting other survivors builds a stack that empowers your next hit on them."},
+{perk:"No Holds Barred", character:"Generic", desc:"Grants a bonus effect the moment your power connects after breaking an object."},
+{perk:"No Quarter", character:"Portia Maye", desc:"Improves tracking after using your power, revealing a trail or aura for a while."},
+{perk:"No Way Out", character:"The Trickster", desc:"Hooking survivors blocks the exit gates, adding extra time before endgame collapse can finish."},
+{perk:"None Are Free", character:"Ken Kaneki", desc:"Sacrificing a survivor slows generator repairs for everyone remaining."},
+{perk:"Nowhere to Hide", character:"Pinhead", desc:"Kicking a generator reveals the aura of survivors near it."},
+{perk:"Oppression", character:"Victor & Charlotte", desc:"Kicking a generator regresses it and blocks two other random generators from progress."},
+{perk:"Overcharge", character:"Herman Carter", desc:"Kicking a generator adds a harder skill check to its next repair attempt."},
+{perk:"Overwhelming Presence", character:"Herman Carter", desc:"Increases how fast survivors' items lose charges inside your terror radius."},
+{perk:"Phantom Fear", character:"William Afton", desc:"Survivors who see you scream and briefly reveal their aura, on a cooldown."},
+{perk:"Play with Your Food", character:"Michael Myers", desc:"Leaving a chase without hitting the obsession stacks a speed boost usable in your next one."},
+{perk:"Pop Goes the Weasel", character:"Kenneth Chase", desc:"Hooking a survivor lets you instantly regress a generator to zero, once."},
+{perk:"Predator", character:"Philip Ojomo", desc:"Makes scratch marks and blood trails harder to lose and visible for longer."},
+{perk:"Rancor", character:"Rin Yamaoka", desc:"Marks the obsession; you see their aura late in the trial, ending with a Mori."},
+{perk:"Rapid Brutality", character:"The Xenomorph", desc:"Recovers your attack cooldown faster after a miss, at the cost of a brief speed penalty."},
+{perk:"Remember Me", character:"Freddy Krueger", desc:"Stacks extra time onto opening the exit gates each time you hit the obsession."},
+{perk:"Save the Best for Last", character:"Michael Myers", desc:"Reduces your attack cooldown against non-obsession survivors, stacking with each hit that isn't the obsession."},
+{perk:"Scourge Hook: Floods of Rage", character:"Onryō", desc:"Survivors hooked on a scourge hook are afflicted with Broken for a while."},
+{perk:"Scourge Hook: Hangman's Trick", character:"Amanda Young", desc:"Speeds up kicking sabotaged hooks and reveals sabotage attempts on scourge hooks."},
+{perk:"Scourge Hook: Jagged Compass", character:"Portia Maye", desc:"Hooking on a scourge hook reveals the aura of the farthest survivor for a while."},
+{perk:"Scourge Hook: Monstrous Shrine", character:"Generic", desc:"Boosts Entity hook progress and your speed near scourge hooks close to the basement."},
+{perk:"Scourge Hook: Pain Resonance", character:"Bubba Sawyer", desc:"Hooking on a scourge hook instantly regresses the generator that survivor was working on."},
+{perk:"Scourge Hook: Weeping Wounds", character:"Generic", desc:"Hooking on a scourge hook makes nearby survivors grunt loudly for a while."},
+{perk:"Septic Touch", character:"The Dredge", desc:"Hitting a survivor blocks a random pallet or window near them for a while."},
+{perk:"Shadowborn", character:"Philip Ojomo", desc:"Widens your field of view and shortens flashlight blind duration."},
+{perk:"Shattered Hope", character:"Generic", desc:"Destroying a boon totem also blocks it from being re-blessed for a while."},
+{perk:"Sloppy Butcher", character:"Generic", desc:"Increases bleeding from injured survivors, making blood pools more visible for longer."},
+{perk:"Spies from the Shadows", character:"Generic", desc:"Crows startled near you send a sound cue toward a survivor's location."},
+{perk:"Spirit Fury", character:"Rin Yamaoka", desc:"Stacks from pallet stuns; the fourth stun lets you break the pallet instantly instead."},
+{perk:"Starstruck", character:"The Trickster", desc:"Downing a survivor Exposes any other survivors near you while you're carrying them."},
+{perk:"Stridor", character:"Sally Smithson", desc:"Increases the volume of injured survivors' breathing and pain grunts."},
+{perk:"Superior Anatomy", character:"Albert Wesker", desc:"Improves your turning speed and reduces how much vaulting helps survivors escape you."},
+{perk:"Surge", character:"The Demogorgon", desc:"Downing a survivor with a basic attack regresses nearby generators."},
+{perk:"Surveillance", character:"Amanda Young", desc:"Reveals regressing generator auras and lets you hear them being repaired from farther away."},
+{perk:"THWACK!", character:"Adriana Imai", desc:"Throwing an object stuns and briefly blinds any survivor it strikes."},
+{perk:"Terminus", character:"Albert Wesker", desc:"Removes Endurance from downed and hooked survivors once the last generator is finished."},
+{perk:"Territorial Imperative", character:"Anna", desc:"Reveals a survivor's aura when they enter the basement while you're elsewhere."},
+{perk:"Thanatophobia", character:"Sally Smithson", desc:"Slows all survivors' actions based on how many are injured, dying, or hooked."},
+{perk:"Thrilling Tremors", character:"The Ghost Face", desc:"Blocks every other generator briefly when you pick up a survivor."},
+{perk:"Tinkerer", character:"Max Thompson Jr.", desc:"Grants Undetectable and a charge speed boost to your power once a generator nears completion."},
+{perk:"Trail of Torment", character:"Pyramid Head", desc:"Grants Undetectable for a while after kicking a generator."},
+{perk:"Ultimate Weapon", character:"The Xenomorph", desc:"Makes a survivor scream and reveal their aura the moment they spot you, once each."},
+{perk:"Unbound", character:"The Unknown", desc:"Increases your movement and vault speed after teleporting or using certain powers."},
+{perk:"Undone", character:"The Unknown", desc:"Blocks aura-reading on a generator and makes regression more effective on it briefly."},
+{perk:"Unforeseen", character:"The Unknown", desc:"Grants a burst of speed and a shrunk terror radius after breaking line of sight."},
+{perk:"Unnerving Presence", character:"Evan MacMillan", desc:"Increases the difficulty of skill checks for survivors inside your terror radius."},
+{perk:"Unrelenting", character:"Generic", desc:"Reduces your cooldown after missing an attack."},
+{perk:"Weave Attunement", character:"Vecna", desc:"Periodically marks a survivor's location whenever you have a power charge ready."},
+{perk:"Whispers", character:"Generic", desc:"Alerts you with a directional cue when a survivor is nearby."},
+{perk:"Zanshin Tactics", character:"Kazan Yamaoka", desc:"Reveals the auras of items survivors are carrying within a set range."},
+];
+
+/* --------------------------------------------------------- */
+
+const state = {
+  role: "survivor",
+  results: [null, null, null, null],
+};
+
+function pool(){ return state.role === "survivor" ? SURVIVOR_PERKS : KILLER_PERKS; }
+
+function hashString(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) >>> 0; }
+  return h;
+}
+
+function initials(name){
+  const words = name.replace(/[^\w\s&]/g,"").split(/\s+/).filter(Boolean);
+  if(words.length === 0) return "?";
+  if(words.length === 1) return words[0].slice(0,2).toUpperCase();
+  return (words[0][0] + words[words.length-1][0]).toUpperCase();
+}
+
+function huesFromHash(h){
+  const hue = h % 360;
+  return { hue };
+}
+
+/* Turns a name into a safe filename slug, e.g. "Onryō" -> "onryo",
+   "Aestri Yazar & Baermar Uraz" -> "aestri-yazar-baermar-uraz" */
+function slugify(str){
+  return str
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/* Generates a 512x512-ratio placeholder character portrait as inline SVG */
+function placeholderPortraitSVG(character){
+  const h = hashString(character);
+  const {hue} = huesFromHash(h);
+  const hue2 = (hue + 40) % 360;
+  const id = "g" + h;
+  return `
+  <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${character}">
+    <defs>
+      <radialGradient id="${id}" cx="50%" cy="35%" r="75%">
+        <stop offset="0%" stop-color="hsl(${hue},38%,26%)"/>
+        <stop offset="100%" stop-color="hsl(${hue2},55%,8%)"/>
+      </radialGradient>
+    </defs>
+    <rect width="512" height="512" fill="url(#${id})"/>
+    <circle cx="256" cy="205" r="92" fill="hsl(${hue},20%,14%)" opacity="0.55"/>
+    <path d="M96 512c8-96 70-166 160-166s152 70 160 166z" fill="hsl(${hue},20%,14%)" opacity="0.55"/>
+    <text x="256" y="290" font-family="Bebas Neue, sans-serif" font-size="120" fill="hsl(${hue},60%,88%)" text-anchor="middle" dominant-baseline="middle" opacity="0.9">${initials(character)}</text>
+  </svg>`;
+}
+
+/* Real portrait image, named by slug: images/characters/<slug>.png (512x512 recommended).
+   Falls back to the generated placeholder above if the file isn't found. */
+function renderPortrait(character){
+  const img = document.createElement("img");
+  img.alt = character;
+  img.loading = "lazy";
+  img.src = `images/characters/${slugify(character)}.png`;
+  img.addEventListener("error", () => {
+    img.onerror = null;
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(placeholderPortraitSVG(character))));
+  }, { once:true });
+  return img;
+}
+
+/* Generates a 96x96-ratio placeholder perk icon as inline SVG */
+function placeholderPerkIconSVG(perkName, role){
+  const h = hashString(perkName);
+  const accent = role === "survivor" ? "#e2a53d" : "#b5293f";
+  const dark = role === "survivor" ? "#3a2b0f" : "#3a0f16";
+  const id = "p" + h;
+  return `
+  <svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${perkName} icon">
+    <defs>
+      <linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${accent}"/>
+        <stop offset="100%" stop-color="${dark}"/>
+      </linearGradient>
+    </defs>
+    <rect width="96" height="96" fill="${dark}"/>
+    <polygon points="48,6 90,27 90,69 48,90 6,69 6,27" fill="url(#${id})"/>
+    <text x="48" y="55" font-family="Bebas Neue, sans-serif" font-size="30" fill="#0c0b0e" text-anchor="middle" dominant-baseline="middle">${initials(perkName)}</text>
+  </svg>`;
+}
+
+/* Real perk icon image, named by slug: images/perks/<slug>.png (96x96 recommended).
+   Falls back to the generated placeholder above if the file isn't found. */
+function renderPerkIcon(perkName, role){
+  const img = document.createElement("img");
+  img.alt = `${perkName} icon`;
+  img.loading = "lazy";
+  img.src = `images/perks/${slugify(perkName)}.png`;
+  img.addEventListener("error", () => {
+    img.onerror = null;
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(placeholderPerkIconSVG(perkName, role))));
+  }, { once:true });
+  return img;
+}
+
+function pickFour(exclude=[]){
+  const source = pool().filter(p => !exclude.includes(p.perk));
+  const shuffled = [...source].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0,4);
+}
+
+function rollAll(){
+  state.results = pickFour();
+  renderGrid();
+}
+
+function rerollOne(index){
+  const currentPerks = state.results.filter((_,i)=>i!==index).map(r=>r.perk);
+  const candidates = pool().filter(p => !currentPerks.includes(p.perk) && p.perk !== state.results[index].perk);
+  const from = candidates.length ? candidates : pool();
+  const pick = from[Math.floor(Math.random()*from.length)];
+  state.results[index] = pick;
+  renderCard(index, true);
+}
+
+function renderCard(index, animateSpin=false){
+  const card = document.querySelectorAll(".card")[index];
+  const r = state.results[index];
+  if(!card || !r) return;
+  const portraitEl = card.querySelector(".portrait");
+  portraitEl.innerHTML = "";
+  portraitEl.appendChild(renderPortrait(r.character));
+  const badgeEl = card.querySelector(".perk-badge");
+  badgeEl.innerHTML = "";
+  badgeEl.appendChild(renderPerkIcon(r.perk, state.role));
+  card.querySelector(".perk-name").textContent = r.perk;
+  card.querySelector(".char-name").textContent = r.character;
+  card.querySelector(".desc").textContent = r.desc || "";
+  if(animateSpin){
+    const btn = card.querySelector(".reroll");
+    btn.classList.remove("spin"); void btn.offsetWidth; btn.classList.add("spin");
+  }
+}
+
+function renderGrid(){
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  state.results.forEach((r, i) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="portrait"></div>
+        <div class="meta">
+          <div class="perk-name"></div>
+          <div class="char-name"></div>
+        </div>
+        <div class="perk-badge"></div>
+      </div>
+      <div class="desc"></div>
+      <button class="btn reroll" data-index="${i}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        Reroll
+      </button>
+    `;
+    grid.appendChild(card);
+  });
+  state.results.forEach((_, i) => renderCard(i));
+  document.getElementById("pool-size").textContent = pool().length;
+
+  grid.querySelectorAll(".reroll").forEach(btn => {
+    btn.addEventListener("click", () => rerollOne(parseInt(btn.dataset.index)));
+  });
+}
+
+function setRole(role){
+  state.role = role;
+  document.body.className = role;
+  document.getElementById("tab-survivor").classList.toggle("active", role==="survivor");
+  document.getElementById("tab-killer").classList.toggle("active", role==="killer");
+  rollAll();
+}
+
+document.getElementById("tab-survivor").addEventListener("click", () => setRole("survivor"));
+document.getElementById("tab-killer").addEventListener("click", () => setRole("killer"));
+document.getElementById("reroll-all").addEventListener("click", rollAll);
+
+setRole("survivor");
+</script>
+</body>
+</html>
