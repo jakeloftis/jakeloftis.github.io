@@ -158,7 +158,9 @@
 
   <div class="grid" id="grid"></div>
 
-
+  <footer>
+    Drop your own art into two folders next to this file: <code>images/characters/</code> for 512×512 character portraits and <code>images/perks/</code> for 96×96 perk icons. Each file must be named after its slug — e.g. "Dead Hard" → <code>dead-hard.png</code>, "Onryō" → <code>onryo.png</code>. Anything missing falls back automatically to a generated placeholder, so you can add art gradually. A full <code>character-and-perk-filenames.csv</code> checklist is included alongside this file. All perk data lives in <code>SURVIVOR_PERKS</code> / <code>KILLER_PERKS</code> in the script — edit freely to fix or extend it.
+  </footer>
 </div>
 
 <script>
@@ -562,10 +564,21 @@ function renderPerkIcon(perkName, role){
   return img;
 }
 
+/* Fisher-Yates shuffle — unlike array.sort(() => Math.random()-0.5), this
+   gives every permutation an equal chance instead of biasing toward
+   items near their original position. */
+function shuffle(arr){
+  const a = [...arr];
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function pickFour(exclude=[]){
   const source = pool().filter(p => !exclude.includes(p.perk));
-  const shuffled = [...source].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0,4);
+  return shuffle(source).slice(0,4);
 }
 
 function rollAll(){
