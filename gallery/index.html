@@ -6,101 +6,131 @@
 <title>gallery</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #16171A;
-    --ink: #EDEDE6;
-    --muted: #8C8B84;
-    --accent: #8FAE93;
-    --line: #2A2B2E;
+    --bg: #0B0B0C;
+    --ink: #F2F1ED;
+    --muted: #7A7870;
+    --accent: #F5D400;
   }
   * { box-sizing: border-box; }
-  body {
+  html, body {
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font-family: 'Inter', -apple-system, sans-serif;
-    font-size: 16px;
+  }
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
   .wrap {
-    max-width: 760px;
+    max-width: 780px;
     margin: 0 auto;
-    padding: 5rem 1.5rem 4rem;
+    padding: 0 1.5rem 4rem;
   }
   header {
+    padding: 4rem 0 2rem;
+    border-bottom: 4px solid var(--accent);
     margin-bottom: 3rem;
-  }
-  h1 {
-    font-family: 'Fraunces', serif;
-    font-weight: 500;
-    font-size: 2.5rem;
-    letter-spacing: -0.01em;
-    margin: 0 0 0.5rem;
-  }
-  .tagline {
-    color: var(--muted);
-    font-size: 1rem;
-    margin: 0;
   }
   a.back {
     color: var(--muted);
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    display: inline-block;
+    margin-bottom: 1.5rem;
   }
   a.back:hover { color: var(--accent); }
+  h1 {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 3rem;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 0 0 0.75rem;
+  }
+  .tagline {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  .tagline::before {
+    content: "// ";
+    color: var(--accent);
+  }
   #embeds {
     display: flex;
     flex-direction: column;
     gap: 2.5rem;
   }
   .embed-item {
-    border-bottom: 1px solid var(--line);
-    padding-bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;
   }
-  .embed-item:last-child {
-    border-bottom: none;
+  .embed-frame {
+    border: 2px solid var(--ink);
+    line-height: 0;
   }
-  .empty {
-    color: var(--muted);
-    padding: 1.25rem 0;
-  }
-  .embed-item iframe {
+  .embed-frame iframe {
     display: block;
     width: 100%;
     min-height: 300px;
     border: none;
-    border-radius: 4px;
+  }
+  .embed-caption {
+    display: flex;
+    align-items: baseline;
+    gap: 1.25rem;
+    padding: 0.85rem 0.25rem;
+    border-bottom: 2px solid var(--ink);
+    font-size: 0.85rem;
+  }
+  .embed-caption .index {
+    color: var(--muted);
+    min-width: 1.75rem;
+  }
+  .embed-caption .cap-title {
+    color: var(--ink);
+  }
+  .empty {
+    color: var(--muted);
+    padding: 1.5rem 0.25rem;
   }
 </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <p class="back"><a class="back" href="/">&larr; home</a></p>
+      <a class="back" href="/">&larr; home</a>
       <h1>gallery</h1>
-      <p class="tagline">Clips and images worth keeping.</p>
+      <p class="tagline">clips and images worth keeping</p>
     </header>
     <div id="embeds">
-      <p class="empty">Loading…</p>
+      <p class="empty">loading...</p>
     </div>
   </div>
 
   <script src="embeds.js"></script>
   <script>
-    // Builds the right Imgur embed URL depending on link type:
-    // - Albums (imgur.com/a/...) use the /a/{id}/embed?pub=true endpoint
-    // - Single image/gif/video posts use the plainer /{id}/embed endpoint
-    function parseImgurEmbedUrl(url) {
-      let match = url.match(/imgur\.com\/(a|gallery)\/(?:[\w-]+-)?([a-zA-Z0-9]+)/i);
+    // Builds the right Imgur embed URL depending on link type, and pulls
+    // a readable caption out of the slug (e.g. "tagilla-hip-fire" -> "tagilla hip fire").
+    function parseImgurEmbed(url) {
+      let match = url.match(/imgur\.com\/(a|gallery)\/(?:([\w-]+)-)?([a-zA-Z0-9]+)/i);
       if (match) {
-        return `https://imgur.com/a/${match[2]}/embed?pub=true`;
+        return {
+          embedUrl: `https://imgur.com/a/${match[3]}/embed?pub=true`,
+          caption: match[2] ? match[2].replace(/-/g, ' ') : null,
+        };
       }
-      match = url.match(/imgur\.com\/(?:[\w-]+-)?([a-zA-Z0-9]{4,10})(?:[/?#]|$)/i);
+      match = url.match(/imgur\.com\/(?:([\w-]+)-)?([a-zA-Z0-9]{4,10})(?:[/?#]|$)/i);
       if (match) {
-        return `https://imgur.com/${match[1]}/embed`;
+        return {
+          embedUrl: `https://imgur.com/${match[2]}/embed`,
+          caption: match[1] ? match[1].replace(/-/g, ' ') : null,
+        };
       }
       return null;
     }
@@ -110,27 +140,40 @@
       const urls = (typeof imgurUrls !== 'undefined') ? imgurUrls : [];
 
       if (!urls.length) {
-        container.innerHTML = '<p class="empty">Nothing here yet.</p>';
+        container.innerHTML = '<p class="empty">nothing here yet.</p>';
         return;
       }
 
       container.innerHTML = '';
 
-      urls.forEach(url => {
-        const embedUrl = parseImgurEmbedUrl(url);
-        if (!embedUrl) return;
+      urls.forEach((url, i) => {
+        const parsed = parseImgurEmbed(url);
+        if (!parsed) return;
 
         const item = document.createElement('div');
         item.className = 'embed-item';
 
+        const frame = document.createElement('div');
+        frame.className = 'embed-frame';
+
         const iframe = document.createElement('iframe');
-        iframe.src = embedUrl;
+        iframe.src = parsed.embedUrl;
         iframe.loading = 'lazy';
         iframe.allowFullscreen = true;
         iframe.scrolling = 'no';
-        iframe.title = url;
+        iframe.title = parsed.caption || url;
 
-        item.appendChild(iframe);
+        frame.appendChild(iframe);
+        item.appendChild(frame);
+
+        const caption = document.createElement('div');
+        caption.className = 'embed-caption';
+        caption.innerHTML = `
+          <span class="index">${String(i + 1).padStart(2, '0')}</span>
+          <span class="cap-title">${parsed.caption || 'untitled'}</span>
+        `;
+        item.appendChild(caption);
+
         container.appendChild(item);
       });
     }
@@ -151,7 +194,7 @@
 
       if (!data || data.message !== 'resize_imgur' || typeof data.height !== 'number') return;
 
-      document.querySelectorAll('.embed-item iframe').forEach(iframe => {
+      document.querySelectorAll('.embed-frame iframe').forEach(iframe => {
         if (iframe.contentWindow === e.source) {
           iframe.style.height = data.height + 'px';
         }
