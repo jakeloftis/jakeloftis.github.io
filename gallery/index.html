@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #16171A;
+    --ink: #EDEDE6;
+    --muted: #8C8B84;
+    --accent: #8FAE93;
+    --line: #2A2B2E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 5rem 1.5rem 4rem;
+  }
+  header {
+    margin-bottom: 3rem;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 2.5rem;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5rem;
+  }
+  .tagline {
+    color: var(--muted);
+    font-size: 1rem;
+    margin: 0;
+  }
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  a.back:hover { color: var(--accent); }
+  #embeds {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+  .embed-item {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 2.5rem;
+  }
+  .embed-item:last-child {
+    border-bottom: none;
+  }
+  .empty {
+    color: var(--muted);
+    padding: 1.25rem 0;
+  }
+  /* Imgur injects its own iframe; this just keeps it from overflowing */
+  .imgur-embed-pub {
+    margin: 0;
+    max-width: 100%;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="back"><a class="back" href="/">&larr; home</a></p>
+      <h1>gallery</h1>
+      <p class="tagline">Clips and images worth keeping.</p>
+    </header>
+    <div id="embeds">
+      <p class="empty">Loading…</p>
+    </div>
+  </div>
+
+  <script src="embeds.js"></script>
+  <script>
+    function extractImgurId(url) {
+      // Matches imgur.com/a/<id>, imgur.com/a/<slug>-<id>, or imgur.com/gallery/<id>
+      const match = url.match(/imgur\.com\/(a|gallery)\/(?:[\w-]+-)?([a-zA-Z0-9]+)/i);
+      if (!match) return null;
+      return `${match[1]}/${match[2]}`;
+    }
+
+    function renderEmbeds() {
+      const container = document.getElementById('embeds');
+      const urls = (typeof imgurUrls !== 'undefined') ? imgurUrls : [];
+
+      if (!urls.length) {
+        container.innerHTML = '<p class="empty">Nothing here yet.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+
+      urls.forEach(url => {
+        const id = extractImgurId(url);
+        if (!id) return;
+
+        const item = document.createElement('div');
+        item.className = 'embed-item';
+
+        const blockquote = document.createElement('blockquote');
+        blockquote.className = 'imgur-embed-pub';
+        blockquote.setAttribute('lang', 'en');
+        blockquote.setAttribute('data-id', id);
+
+        const link = document.createElement('a');
+        link.href = `//imgur.com/${id}`;
+        blockquote.appendChild(link);
+
+        item.appendChild(blockquote);
+        container.appendChild(item);
+      });
+
+      // Load Imgur's embed widget after the blockquotes exist so it can scan them.
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://s.imgur.com/min/embed-js.min.js';
+      script.charset = 'utf-8';
+      document.body.appendChild(script);
+    }
+
+    renderEmbeds();
+  </script>
+</body>
+</html>
