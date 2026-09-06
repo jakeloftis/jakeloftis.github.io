@@ -207,7 +207,7 @@
 
   <script src="data.js"></script>
   <script>
-    const SIZE_ORDER = { "Small": 0, "Medium": 1, "Large": 2, "Main Item": 3 };
+    const SIZE_ORDER = { "Small": 0, "Medium": 1, "Large": 2 };
 
     let sortState = { col: "group", dir: 1 };
     let filters = { search: "", group: "", size: "", type: "" };
@@ -217,8 +217,13 @@
       return Array.from(new Set(values)).sort();
     }
 
+    function categoryCheck(row, cat) {
+      return cat === 'Main Item' ? !!row.mainItem : row.types.includes(cat);
+    }
+
     function buildCategoryColumns() {
-      categories = uniqueSorted(itemData.flatMap(r => r.types));
+      const typeCats = uniqueSorted(itemData.flatMap(r => r.types));
+      categories = ['Main Item', ...typeCats];
       const headerRow = document.getElementById('header-row');
       categories.forEach(cat => {
         const th = document.createElement('th');
@@ -263,7 +268,7 @@
         if (filters.search && !r.item.toLowerCase().includes(filters.search.toLowerCase())) return false;
         if (filters.group && r.group !== filters.group) return false;
         if (filters.size && r.size !== filters.size) return false;
-        if (filters.type && !r.types.includes(filters.type)) return false;
+        if (filters.type && !categoryCheck(r, filters.type)) return false;
         return true;
       });
 
@@ -274,8 +279,8 @@
           bv = SIZE_ORDER[b.size] ?? 99;
         } else if (sortState.col.startsWith('cat:')) {
           const cat = sortState.col.slice(4);
-          av = a.types.includes(cat) ? 1 : 0;
-          bv = b.types.includes(cat) ? 1 : 0;
+          av = categoryCheck(a, cat) ? 1 : 0;
+          bv = categoryCheck(b, cat) ? 1 : 0;
         } else {
           av = a[sortState.col] || '';
           bv = b[sortState.col] || '';
@@ -303,11 +308,11 @@
       }
 
       body.innerHTML = rows.map(r => `
-        <tr class="${r.size === 'Main Item' ? 'main-item' : ''}">
+        <tr class="${r.mainItem ? 'main-item' : ''}">
           <td>${r.group}</td>
           <td class="item-name">${r.item}</td>
           <td>${r.size}</td>
-          ${categories.map(cat => `<td class="category-cell">${r.types.includes(cat) ? '\u2713' : ''}</td>`).join('')}
+          ${categories.map(cat => `<td class="category-cell">${categoryCheck(r, cat) ? '\u2713' : ''}</td>`).join('')}
         </tr>
       `).join('');
     }
