@@ -119,17 +119,21 @@
     color: var(--ink);
   }
   thead th.category {
-    height: 110px;
-    padding: 0 0.25rem 0.6rem;
+    height: 100px;
+    padding: 0 0.35rem 0.6rem;
     vertical-align: bottom;
-    width: 2.25rem;
-    min-width: 2.25rem;
+    width: 2.5rem;
+    min-width: 2.5rem;
   }
   thead th.category .label {
     display: inline-block;
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
+    transform: rotate(-45deg);
+    transform-origin: left bottom;
     white-space: nowrap;
+  }
+  thead th.category:last-child,
+  tbody td.category-cell:last-child {
+    padding-right: 3.5rem;
   }
   thead th .arrow {
     display: inline-block;
