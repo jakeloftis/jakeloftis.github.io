@@ -315,10 +315,23 @@
           bv = b[sortState.col] || '';
         }
 
-        if (typeof av === 'number') {
-          return (av - bv) * sortState.dir;
+        const primary = (typeof av === 'number')
+          ? (av - bv) * sortState.dir
+          : String(av).localeCompare(String(bv)) * sortState.dir;
+        if (primary !== 0) return primary;
+
+        // Tiebreakers so the default view is always Group -> Item -> Size,
+        // and other sorts stay deterministic instead of falling back to
+        // whatever order the data happened to be listed in.
+        if (sortState.col !== 'item') {
+          const itemCmp = a.item.localeCompare(b.item);
+          if (itemCmp !== 0) return itemCmp;
         }
-        return String(av).localeCompare(String(bv)) * sortState.dir;
+        if (sortState.col !== 'size') {
+          const sizeCmp = (SIZE_ORDER[a.size] ?? 99) - (SIZE_ORDER[b.size] ?? 99);
+          if (sizeCmp !== 0) return sizeCmp;
+        }
+        return 0;
       });
 
       return rows;
