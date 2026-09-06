@@ -129,7 +129,7 @@
   tbody td.category-cell {
     border-left: 1px solid rgba(242, 241, 237, 0.14);
   }
-  tbody td:nth-child(4) {
+  tbody td:nth-child(5) {
     border-left: 2px solid var(--ink);
   }
   tbody tr:hover td {
@@ -155,9 +155,21 @@
     border-bottom: 1px solid rgba(242, 241, 237, 0.14);
     vertical-align: middle;
   }
-  tbody td:first-child,
+  tbody td:nth-child(2),
   thead th[data-col="group"] {
     white-space: nowrap;
+  }
+  .have-col {
+    width: 2.5rem;
+  }
+  .have-cell {
+    text-align: center;
+  }
+  .have-cell input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--accent);
+    cursor: pointer;
   }
   tbody td.category-cell {
     text-align: center;
@@ -220,6 +232,7 @@
       <table>
         <thead>
           <tr id="header-row">
+            <th class="no-sort have-col">have</th>
             <th data-col="group">group<span class="arrow"></span></th>
             <th data-col="item">item<span class="arrow"></span></th>
             <th data-col="size">size<span class="arrow"></span></th>
@@ -233,10 +246,33 @@
   <script src="data.js"></script>
   <script>
     const SIZE_ORDER = { "Small": 0, "Medium": 1, "Large": 2 };
+    const HAVE_STORAGE_KEY = 'thedragons-have-v1';
 
     let sortState = { col: "group", dir: 1 };
     let filters = { search: "", group: "", size: "", type: "" };
     let categories = [];
+
+    function rowKey(r) {
+      return `${r.group}::${r.item}::${r.size}`;
+    }
+
+    function loadHaveState() {
+      try {
+        return JSON.parse(localStorage.getItem(HAVE_STORAGE_KEY) || '{}');
+      } catch (err) {
+        return {};
+      }
+    }
+
+    function saveHaveState(state) {
+      try {
+        localStorage.setItem(HAVE_STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        // localStorage unavailable (private browsing, etc.) - checks just won't persist.
+      }
+    }
+
+    let haveState = loadHaveState();
 
     function uniqueSorted(values) {
       return Array.from(new Set(values)).sort();
@@ -345,22 +381,34 @@
       count.textContent = `${rows.length} item${rows.length === 1 ? '' : 's'}`;
 
       if (!rows.length) {
-        body.innerHTML = `<tr class="empty-row"><td colspan="${3 + categories.length}">no items match those filters.</td></tr>`;
+        body.innerHTML = `<tr class="empty-row"><td colspan="${4 + categories.length}">no items match those filters.</td></tr>`;
         return;
       }
 
-      body.innerHTML = rows.map(r => `
+      body.innerHTML = rows.map(r => {
+        const key = rowKey(r);
+        const checked = haveState[key] ? 'checked' : '';
+        return `
         <tr class="${r.mainItem ? (r.aux ? 'aux-item' : 'main-item') : ''}">
+          <td class="have-cell"><input type="checkbox" class="have-checkbox" data-key="${key}" ${checked}></td>
           <td>${r.group}</td>
           <td class="item-name">${r.item}</td>
           <td>${r.size}</td>
           ${categories.map(cat => `<td class="category-cell">${categoryCheck(r, cat) ? '\u2713' : ''}</td>`).join('')}
         </tr>
-      `).join('');
+      `;
+      }).join('');
+
+      document.querySelectorAll('.have-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+          haveState[checkbox.dataset.key] = checkbox.checked;
+          saveHaveState(haveState);
+        });
+      });
     }
 
     function updateArrows() {
-      document.querySelectorAll('thead th').forEach(th => {
+      document.querySelectorAll('thead th:not(.no-sort)').forEach(th => {
         const arrow = th.querySelector('.arrow');
         if (th.dataset.col === sortState.col) {
           arrow.textContent = sortState.dir === 1 ? '\u2191' : '\u2193';
@@ -371,7 +419,7 @@
     }
 
     function attachHeaderSorting() {
-      document.querySelectorAll('thead th').forEach(th => {
+      document.querySelectorAll('thead th:not(.no-sort)').forEach(th => {
         th.addEventListener('click', () => {
           const col = th.dataset.col;
           if (sortState.col === col) {
