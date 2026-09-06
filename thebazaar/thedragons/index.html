@@ -27,7 +27,7 @@
     -webkit-font-smoothing: antialiased;
   }
   .wrap {
-    max-width: 1000px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: 0 1.5rem 4rem;
   }
@@ -95,6 +95,10 @@
     margin: -1.25rem 0 1.5rem;
   }
 
+  .table-scroll {
+    overflow-x: auto;
+    border-bottom: 2px solid var(--ink);
+  }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -105,7 +109,7 @@
     font-weight: 700;
     font-size: 0.8rem;
     color: var(--muted);
-    padding: 0.75rem 0.75rem;
+    padding: 0.75rem;
     border-bottom: 2px solid var(--ink);
     cursor: pointer;
     user-select: none;
@@ -113,6 +117,19 @@
   }
   thead th:hover {
     color: var(--ink);
+  }
+  thead th.category {
+    height: 100px;
+    padding: 0 0.35rem 0.6rem;
+    vertical-align: bottom;
+    width: 2.5rem;
+    min-width: 2.5rem;
+  }
+  thead th.category .label {
+    display: inline-block;
+    transform: rotate(-45deg);
+    transform-origin: left bottom;
+    white-space: nowrap;
   }
   thead th .arrow {
     display: inline-block;
@@ -122,14 +139,16 @@
   tbody td {
     padding: 0.75rem;
     border-bottom: 1px solid rgba(242, 241, 237, 0.14);
-    vertical-align: top;
+    vertical-align: middle;
+  }
+  tbody td.category-cell {
+    text-align: center;
+    color: var(--accent);
+    font-weight: 700;
   }
   tbody tr:hover td {
     background: var(--ink);
     color: var(--bg);
-  }
-  tbody tr:hover .tag {
-    border-color: var(--bg);
   }
   tbody tr.main-item td {
     color: var(--accent);
@@ -142,13 +161,7 @@
     font-weight: 700;
     font-family: 'Archivo', sans-serif;
     font-size: 0.95rem;
-  }
-  .tag {
-    display: inline-block;
-    border: 1px solid currentColor;
-    padding: 0.15rem 0.5rem;
-    font-size: 0.75rem;
-    margin: 0.1rem 0.25rem 0.1rem 0;
+    white-space: nowrap;
   }
   .empty-row td {
     color: var(--muted);
@@ -173,23 +186,23 @@
         <option value="">all sizes</option>
       </select>
       <select id="filter-type">
-        <option value="">all types</option>
+        <option value="">all categories</option>
       </select>
     </div>
     <p class="count" id="count"></p>
 
-    <table>
-      <thead>
-        <tr>
-          <th data-col="group">group<span class="arrow"></span></th>
-          <th data-col="item">item<span class="arrow"></span></th>
-          <th data-col="size">size<span class="arrow"></span></th>
-          <th data-col="type1">type<span class="arrow"></span></th>
-          <th data-col="type2">type<span class="arrow"></span></th>
-        </tr>
-      </thead>
-      <tbody id="table-body"></tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr id="header-row">
+            <th data-col="group">group<span class="arrow"></span></th>
+            <th data-col="item">item<span class="arrow"></span></th>
+            <th data-col="size">size<span class="arrow"></span></th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
   </div>
 
   <script src="data.js"></script>
@@ -198,9 +211,22 @@
 
     let sortState = { col: "group", dir: 1 };
     let filters = { search: "", group: "", size: "", type: "" };
+    let categories = [];
 
     function uniqueSorted(values) {
       return Array.from(new Set(values)).sort();
+    }
+
+    function buildCategoryColumns() {
+      categories = uniqueSorted(itemData.flatMap(r => r.types));
+      const headerRow = document.getElementById('header-row');
+      categories.forEach(cat => {
+        const th = document.createElement('th');
+        th.className = 'category';
+        th.dataset.col = `cat:${cat}`;
+        th.innerHTML = `<span class="label">${cat.toLowerCase()}</span><span class="arrow"></span>`;
+        headerRow.appendChild(th);
+      });
     }
 
     function populateFilters() {
@@ -224,8 +250,7 @@
         sizeSel.appendChild(opt);
       });
 
-      const types = uniqueSorted(itemData.flatMap(r => r.types));
-      types.forEach(t => {
+      categories.forEach(t => {
         const opt = document.createElement('option');
         opt.value = t;
         opt.textContent = t.toLowerCase();
@@ -247,12 +272,10 @@
         if (sortState.col === 'size') {
           av = SIZE_ORDER[a.size] ?? 99;
           bv = SIZE_ORDER[b.size] ?? 99;
-        } else if (sortState.col === 'type1') {
-          av = a.types[0] || '';
-          bv = b.types[0] || '';
-        } else if (sortState.col === 'type2') {
-          av = a.types[1] || '';
-          bv = b.types[1] || '';
+        } else if (sortState.col.startsWith('cat:')) {
+          const cat = sortState.col.slice(4);
+          av = a.types.includes(cat) ? 1 : 0;
+          bv = b.types.includes(cat) ? 1 : 0;
         } else {
           av = a[sortState.col] || '';
           bv = b[sortState.col] || '';
@@ -275,7 +298,7 @@
       count.textContent = `${rows.length} item${rows.length === 1 ? '' : 's'}`;
 
       if (!rows.length) {
-        body.innerHTML = '<tr class="empty-row"><td colspan="5">no items match those filters.</td></tr>';
+        body.innerHTML = `<tr class="empty-row"><td colspan="${3 + categories.length}">no items match those filters.</td></tr>`;
         return;
       }
 
@@ -284,8 +307,7 @@
           <td>${r.group}</td>
           <td class="item-name">${r.item}</td>
           <td>${r.size}</td>
-          <td>${r.types[0] ? `<span class="tag">${r.types[0]}</span>` : ''}</td>
-          <td>${r.types[1] ? `<span class="tag">${r.types[1]}</span>` : ''}</td>
+          ${categories.map(cat => `<td class="category-cell">${r.types.includes(cat) ? '\u2713' : ''}</td>`).join('')}
         </tr>
       `).join('');
     }
@@ -301,19 +323,23 @@
       });
     }
 
-    document.querySelectorAll('thead th').forEach(th => {
-      th.addEventListener('click', () => {
-        const col = th.dataset.col;
-        if (sortState.col === col) {
-          sortState.dir *= -1;
-        } else {
-          sortState.col = col;
-          sortState.dir = 1;
-        }
-        updateArrows();
-        render();
+    function attachHeaderSorting() {
+      document.querySelectorAll('thead th').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = th.dataset.col;
+          if (sortState.col === col) {
+            sortState.dir *= -1;
+          } else {
+            sortState.col = col;
+            // Category columns default to showing matches first (descending);
+            // everything else defaults to ascending.
+            sortState.dir = col.startsWith('cat:') ? -1 : 1;
+          }
+          updateArrows();
+          render();
+        });
       });
-    });
+    }
 
     document.getElementById('search').addEventListener('input', e => {
       filters.search = e.target.value;
@@ -332,7 +358,9 @@
       render();
     });
 
+    buildCategoryColumns();
     populateFilters();
+    attachHeaderSorting();
     updateArrows();
     render();
   </script>
