@@ -13,6 +13,7 @@
     --ink: #F2F1ED;
     --muted: #7A7870;
     --accent: #F5D400;
+    --aux: #4FC1E9;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -165,6 +166,13 @@
   tbody tr.main-item:hover td {
     color: var(--bg);
   }
+  tbody tr.aux-item td {
+    color: var(--aux);
+    font-weight: 500;
+  }
+  tbody tr.aux-item:hover td {
+    color: var(--bg);
+  }
   .item-name {
     font-weight: 700;
     font-family: 'Archivo', sans-serif;
@@ -237,7 +245,11 @@
         const th = document.createElement('th');
         th.className = 'category';
         th.dataset.col = `cat:${cat}`;
-        th.innerHTML = `<span class="label">${cat.toLowerCase()}</span><span class="arrow"></span>`;
+        if (cat === 'Main Item') {
+          th.innerHTML = `<span class="label"><span style="color:var(--accent)">Main</span><span style="color:var(--muted)">/</span><span style="color:var(--aux)">Aux</span></span><span class="arrow"></span>`;
+        } else {
+          th.innerHTML = `<span class="label">${cat.toLowerCase()}</span><span class="arrow"></span>`;
+        }
         headerRow.appendChild(th);
       });
     }
@@ -316,7 +328,7 @@
       }
 
       body.innerHTML = rows.map(r => `
-        <tr class="${r.mainItem ? 'main-item' : ''}">
+        <tr class="${r.mainItem ? (r.aux ? 'aux-item' : 'main-item') : ''}">
           <td>${r.group}</td>
           <td class="item-name">${r.item}</td>
           <td>${r.size}</td>
