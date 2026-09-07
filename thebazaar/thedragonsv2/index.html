@@ -1,1 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dragons items</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0B0C;
+    --ink: #F2F1ED;
+    --muted: #7A7870;
+    --accent: #F5D400;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+  }
+  header {
+    padding: 4rem 0 2rem;
+    border-bottom: 4px solid var(--accent);
+    margin-bottom: 2rem;
+  }
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+  }
+  a.back:hover { color: var(--accent); }
+  h1 {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 3rem;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 0 0 0.75rem;
+  }
+  .tagline {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem;
+  }
+  .tagline::before {
+    content: "// ";
+    color: var(--accent);
+  }
+  .source {
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+  .source a {
+    color: var(--muted);
+  }
+  .source a:hover {
+    color: var(--accent);
+  }
 
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 2rem 0;
+  }
+  .controls input,
+  .controls select {
+    background: var(--bg);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.75rem;
+  }
+  .controls input {
+    flex: 1 1 220px;
+  }
+  .controls select {
+    flex: 0 0 auto;
+  }
+  .controls input:focus,
+  .controls select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .count {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin: -1.25rem 0 1.5rem;
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    border-bottom: 2px solid var(--ink);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th {
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding: 0.75rem;
+    border-bottom: 2px solid var(--ink);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  thead th:hover {
+    color: var(--ink);
+  }
+  thead th.no-sort {
+    cursor: default;
+  }
+  thead th.no-sort:hover {
+    color: var(--muted);
+  }
+  thead th.category {
+    height: 100px;
+    padding: 0 0.35rem 0.6rem;
+    vertical-align: bottom;
+    width: 2.5rem;
+    min-width: 2.5rem;
+  }
+  thead th.category .label {
+    display: inline-block;
+    transform: rotate(-45deg);
+    transform-origin: left bottom;
+    white-space: nowrap;
+  }
+  thead th.category:last-child,
+  tbody td.category-cell:last-child {
+    padding-right: 1.5rem;
+  }
+  thead th .arrow {
+    display: inline-block;
+    width: 1ch;
+    color: var(--accent);
+  }
+  tbody td {
+    padding: 0.75rem;
+    border-bottom: 1px solid rgba(242, 241, 237, 0.14);
+    vertical-align: top;
+  }
+  tbody td.category-cell {
+    border-left: 1px solid rgba(242, 241, 237, 0.14);
+    text-align: center;
+    color: var(--ink);
+    font-weight: 700;
+    vertical-align: middle;
+  }
+  tbody td:nth-child(5) {
+    border-left: 2px solid var(--ink);
+  }
+  tbody tr:hover td {
+    background: var(--ink);
+    color: var(--bg);
+    border-left-color: rgba(11, 11, 12, 0.3);
+  }
+  .have-col {
+    width: 2.5rem;
+  }
+  .have-cell {
+    text-align: center;
+    vertical-align: middle;
+  }
+  .have-cell input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .item-name {
+    font-weight: 700;
+    font-family: 'Archivo', sans-serif;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+  .size-cell,
+  .cooldown-cell {
+    white-space: nowrap;
+  }
+  .empty-row td {
+    color: var(--muted);
+    padding: 1.5rem 0.75rem;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="back" href="/">&larr; home</a>
+      <h1>dragons items</h1>
+      <p class="tagline">every item, sortable and searchable</p>
+      <p class="source">data via <a href="https://mobalytics.gg/the-bazaar/the-dragons-items" target="_blank" rel="noopener">mobalytics.gg</a></p>
+    </header>
+
+    <div class="controls">
+      <input type="text" id="search" placeholder="search items...">
+      <select id="filter-size">
+        <option value="">all sizes</option>
+      </select>
+      <select id="filter-type">
+        <option value="">all categories</option>
+      </select>
+    </div>
+    <p class="count" id="count"></p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr id="header-row">
+            <th class="no-sort have-col">have</th>
+            <th data-col="name">item<span class="arrow"></span></th>
+            <th data-col="size">size<span class="arrow"></span></th>
+            <th data-col="cooldown">cooldown<span class="arrow"></span></th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    const SIZE_ORDER = { "Small": 0, "Medium": 1, "Large": 2 };
+    const HAVE_STORAGE_KEY = 'dragons-items-have-v1';
+
+    let sortState = { col: "name", dir: 1 };
+    let filters = { search: "", size: "", type: "" };
+    let categories = [];
+
+    function uniqueSorted(values) {
+      return Array.from(new Set(values)).sort();
+    }
+
+    function loadHaveState() {
+      try {
+        return JSON.parse(localStorage.getItem(HAVE_STORAGE_KEY) || '{}');
+      } catch (err) {
+        return {};
+      }
+    }
+
+    function saveHaveState(state) {
+      try {
+        localStorage.setItem(HAVE_STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        // localStorage unavailable - checks just won't persist.
+      }
+    }
+
+    let haveState = loadHaveState();
+
+    function buildCategoryColumns() {
+      categories = uniqueSorted(dragonsItems.flatMap(r => r.types));
+      const headerRow = document.getElementById('header-row');
+      categories.forEach(cat => {
+        const th = document.createElement('th');
+        th.className = 'category';
+        th.dataset.col = `cat:${cat}`;
+        th.innerHTML = `<span class="label">${cat.toLowerCase()}</span><span class="arrow"></span>`;
+        headerRow.appendChild(th);
+      });
+    }
+
+    function populateFilters() {
+      const sizeSel = document.getElementById('filter-size');
+      const typeSel = document.getElementById('filter-type');
+
+      const sizes = uniqueSorted(dragonsItems.map(r => r.size))
+        .sort((a, b) => (SIZE_ORDER[a] ?? 99) - (SIZE_ORDER[b] ?? 99));
+      sizes.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s.toLowerCase();
+        sizeSel.appendChild(opt);
+      });
+
+      categories.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t.toLowerCase();
+        typeSel.appendChild(opt);
+      });
+    }
+
+    function getFilteredSorted() {
+      let rows = dragonsItems.filter(r => {
+        if (filters.search && !r.name.toLowerCase().includes(filters.search.toLowerCase())) return false;
+        if (filters.size && r.size !== filters.size) return false;
+        if (filters.type && !r.types.includes(filters.type)) return false;
+        return true;
+      });
+
+      rows.sort((a, b) => {
+        let av, bv;
+        if (sortState.col === 'size') {
+          av = SIZE_ORDER[a.size] ?? 99;
+          bv = SIZE_ORDER[b.size] ?? 99;
+        } else if (sortState.col === 'cooldown') {
+          av = a.cooldown === null ? -1 : parseFloat(a.cooldown) || 0;
+          bv = b.cooldown === null ? -1 : parseFloat(b.cooldown) || 0;
+        } else if (sortState.col.startsWith('cat:')) {
+          const cat = sortState.col.slice(4);
+          av = a.types.includes(cat) ? 1 : 0;
+          bv = b.types.includes(cat) ? 1 : 0;
+        } else {
+          av = a[sortState.col] || '';
+          bv = b[sortState.col] || '';
+        }
+
+        const primary = (typeof av === 'number')
+          ? (av - bv) * sortState.dir
+          : String(av).localeCompare(String(bv)) * sortState.dir;
+        if (primary !== 0) return primary;
+
+        // Tiebreaker so results stay stable and alphabetical instead of
+        // falling back to whatever order the data happened to be in.
+        if (sortState.col !== 'name') {
+          return a.name.localeCompare(b.name);
+        }
+        return 0;
+      });
+
+      return rows;
+    }
+
+    function render() {
+      const rows = getFilteredSorted();
+      const body = document.getElementById('table-body');
+      const count = document.getElementById('count');
+
+      count.textContent = `${rows.length} item${rows.length === 1 ? '' : 's'}`;
+
+      if (!rows.length) {
+        body.innerHTML = `<tr class="empty-row"><td colspan="${4 + categories.length}">no items match those filters.</td></tr>`;
+        return;
+      }
+
+      body.innerHTML = rows.map(r => {
+        const checked = haveState[r.name] ? 'checked' : '';
+        return `
+        <tr>
+          <td class="have-cell"><input type="checkbox" class="have-checkbox" data-key="${r.name}" ${checked}></td>
+          <td class="item-name">${r.name}</td>
+          <td class="size-cell">${r.size}</td>
+          <td class="cooldown-cell">${r.cooldown || '\u2014'}</td>
+          ${categories.map(cat => `<td class="category-cell">${r.types.includes(cat) ? '\u2713' : ''}</td>`).join('')}
+        </tr>
+      `;
+      }).join('');
+
+      document.querySelectorAll('.have-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+          haveState[checkbox.dataset.key] = checkbox.checked;
+          saveHaveState(haveState);
+        });
+      });
+    }
+
+    function updateArrows() {
+      document.querySelectorAll('thead th:not(.no-sort)').forEach(th => {
+        const arrow = th.querySelector('.arrow');
+        if (th.dataset.col === sortState.col) {
+          arrow.textContent = sortState.dir === 1 ? '\u2191' : '\u2193';
+        } else {
+          arrow.textContent = '';
+        }
+      });
+    }
+
+    function attachHeaderSorting() {
+      document.querySelectorAll('thead th:not(.no-sort)').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = th.dataset.col;
+          if (sortState.col === col) {
+            sortState.dir *= -1;
+          } else {
+            sortState.col = col;
+            sortState.dir = col.startsWith('cat:') ? -1 : 1;
+          }
+          updateArrows();
+          render();
+        });
+      });
+    }
+
+    document.getElementById('search').addEventListener('input', e => {
+      filters.search = e.target.value;
+      render();
+    });
+    document.getElementById('filter-size').addEventListener('change', e => {
+      filters.size = e.target.value;
+      render();
+    });
+    document.getElementById('filter-type').addEventListener('change', e => {
+      filters.type = e.target.value;
+      render();
+    });
+
+    buildCategoryColumns();
+    populateFilters();
+    attachHeaderSorting();
+    updateArrows();
+    render();
+  </script>
+</body>
+</html>
