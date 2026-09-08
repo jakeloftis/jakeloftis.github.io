@@ -183,6 +183,18 @@
     border-bottom: 2px solid var(--ink);
     white-space: nowrap;
   }
+  thead th.sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th.sortable:hover {
+    color: var(--ink);
+  }
+  thead th .arrow {
+    display: inline-block;
+    width: 1ch;
+    color: var(--accent);
+  }
   tbody td {
     padding: 0.85rem 0.75rem;
     border-bottom: 1px solid rgba(242, 241, 237, 0.14);
@@ -193,12 +205,13 @@
   }
   .pick-cell {
     text-align: center;
-    vertical-align: middle;
+    vertical-align: top;
     width: 2.5rem;
   }
   .pick-cell input[type="checkbox"] {
     width: 1.15rem;
     height: 1.15rem;
+    margin-top: 0.15rem;
     cursor: pointer;
   }
   .pick-cell input[type="checkbox"].positive-check {
@@ -274,8 +287,8 @@
         <thead>
           <tr>
             <th></th>
-            <th>trait</th>
-            <th style="text-align:right">points</th>
+            <th class="sortable" data-col="name" data-body="positive-body">trait<span class="arrow"></span></th>
+            <th class="sortable" data-col="points" data-body="positive-body" style="text-align:right">points<span class="arrow"></span></th>
             <th>description</th>
             <th>effects</th>
           </tr>
@@ -291,28 +304,13 @@
         <thead>
           <tr>
             <th></th>
-            <th>trait</th>
-            <th style="text-align:right">points</th>
+            <th class="sortable" data-col="name" data-body="negative-body">trait<span class="arrow"></span></th>
+            <th class="sortable" data-col="points" data-body="negative-body" style="text-align:right">points<span class="arrow"></span></th>
             <th>description</th>
             <th>effects</th>
           </tr>
         </thead>
         <tbody id="negative-body"></tbody>
-      </table>
-    </section>
-
-    <section class="group">
-      <h2>weight-based traits</h2>
-      <p class="section-note">not directly selectable &mdash; assigned automatically from your starting weight slider, shown here for reference only</p>
-      <table>
-        <thead>
-          <tr>
-            <th>trait</th>
-            <th>description</th>
-            <th>effects</th>
-          </tr>
-        </thead>
-        <tbody id="weight-body"></tbody>
       </table>
     </section>
   </div>
@@ -323,6 +321,10 @@
 
     let selected = loadSelected();
     let searchTerm = '';
+    let sortStates = {
+      'positive-body': { col: 'points', dir: 1 },
+      'negative-body': { col: 'points', dir: 1 },
+    };
 
     function loadSelected() {
       try {
@@ -351,8 +353,28 @@
     }
 
     function renderSelectableSection(category, tbodyId) {
-      const rows = traits.filter(t => t.category === category && t.points !== null && matchesSearch(t));
+      let rows = traits.filter(t => t.category === category && matchesSearch(t));
       const body = document.getElementById(tbodyId);
+      const state = sortStates[tbodyId];
+
+      rows.sort((a, b) => {
+        let av, bv;
+        if (state.col === 'points') {
+          // Ascending = ascending cost/severity (|-1| before |-10|, and
+          // +1 before +12), which reproduces the in-game trait list order
+          // for both the positive and negative tables.
+          av = Math.abs(a.points);
+          bv = Math.abs(b.points);
+        } else {
+          av = a.name;
+          bv = b.name;
+        }
+        const primary = (typeof av === 'number')
+          ? (av - bv) * state.dir
+          : String(av).localeCompare(String(bv)) * state.dir;
+        if (primary !== 0) return primary;
+        return a.name.localeCompare(b.name);
+      });
 
       if (!rows.length) {
         body.innerHTML = `<tr class="empty-row"><td colspan="5">no traits match that search.</td></tr>`;
@@ -387,15 +409,32 @@
       });
     }
 
-    function renderReferenceOnlySections() {
-      const weightRows = traits.filter(t => t.points === null);
-      document.getElementById('weight-body').innerHTML = weightRows.map(t => `
-        <tr>
-          <td class="trait-name">${t.name}</td>
-          <td class="desc-cell">${t.description}</td>
-          <td class="effects-cell">${effectsList(t.effects)}</td>
-        </tr>
-      `).join('');
+    function updateSortArrows() {
+      document.querySelectorAll('thead th.sortable').forEach(th => {
+        const state = sortStates[th.dataset.body];
+        const arrow = th.querySelector('.arrow');
+        if (th.dataset.col === state.col) {
+          arrow.textContent = state.dir === 1 ? '\u2191' : '\u2193';
+        } else {
+          arrow.textContent = '';
+        }
+      });
+    }
+
+    function attachSorting() {
+      document.querySelectorAll('thead th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const state = sortStates[th.dataset.body];
+          if (state.col === th.dataset.col) {
+            state.dir *= -1;
+          } else {
+            state.col = th.dataset.col;
+            state.dir = 1;
+          }
+          updateSortArrows();
+          renderAll();
+        });
+      });
     }
 
     function updateBudget() {
@@ -419,8 +458,8 @@
     }
 
     function updateCounts() {
-      const posCount = traits.filter(t => t.category === 'positive' && t.points !== null && matchesSearch(t)).length;
-      const negCount = traits.filter(t => t.category === 'negative' && t.points !== null && matchesSearch(t)).length;
+      const posCount = traits.filter(t => t.category === 'positive' && matchesSearch(t)).length;
+      const negCount = traits.filter(t => t.category === 'negative' && matchesSearch(t)).length;
       document.getElementById('positive-count').textContent = `(${posCount})`;
       document.getElementById('negative-count').textContent = `(${negCount})`;
       document.getElementById('count').textContent = searchTerm
@@ -446,7 +485,8 @@
       renderAll();
     });
 
-    renderReferenceOnlySections();
+    attachSorting();
+    updateSortArrows();
     renderAll();
   </script>
 </body>
