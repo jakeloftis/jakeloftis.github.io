@@ -238,6 +238,17 @@
     min-width: 220px;
     max-width: 320px;
   }
+  .category-cell {
+    white-space: nowrap;
+  }
+  .category-cell .tag {
+    display: inline-block;
+    border: 1px solid var(--muted);
+    color: var(--muted);
+    padding: 0.1rem 0.45rem;
+    font-size: 0.72rem;
+    margin: 0.1rem 0.25rem 0.1rem 0;
+  }
   .effects-cell {
     min-width: 240px;
     max-width: 420px;
@@ -277,6 +288,9 @@
 
     <div class="controls">
       <input type="text" id="search" placeholder="search traits...">
+      <select id="filter-category">
+        <option value="">all categories</option>
+      </select>
     </div>
     <p class="count" id="count"></p>
 
@@ -289,6 +303,7 @@
             <th></th>
             <th class="sortable" data-col="name" data-body="positive-body">trait<span class="arrow"></span></th>
             <th class="sortable" data-col="points" data-body="positive-body" style="text-align:right">points<span class="arrow"></span></th>
+            <th class="sortable" data-col="categories" data-body="positive-body">category<span class="arrow"></span></th>
             <th>description</th>
             <th>effects</th>
           </tr>
@@ -306,6 +321,7 @@
             <th></th>
             <th class="sortable" data-col="name" data-body="negative-body">trait<span class="arrow"></span></th>
             <th class="sortable" data-col="points" data-body="negative-body" style="text-align:right">points<span class="arrow"></span></th>
+            <th class="sortable" data-col="categories" data-body="negative-body">category<span class="arrow"></span></th>
             <th>description</th>
             <th>effects</th>
           </tr>
@@ -321,6 +337,7 @@
 
     let selected = loadSelected();
     let searchTerm = '';
+    let categoryFilter = '';
     let sortStates = {
       'positive-body': { col: 'points', dir: 1 },
       'negative-body': { col: 'points', dir: 1 },
@@ -347,9 +364,21 @@
     }
 
     function matchesSearch(t) {
+      if (categoryFilter && !t.categories.includes(categoryFilter)) return false;
       if (!searchTerm) return true;
-      const haystack = (t.name + ' ' + t.description + ' ' + t.effects.join(' ')).toLowerCase();
+      const haystack = (t.name + ' ' + t.description + ' ' + t.effects.join(' ') + ' ' + t.categories.join(' ')).toLowerCase();
       return haystack.includes(searchTerm.toLowerCase());
+    }
+
+    function populateCategoryFilter() {
+      const cats = Array.from(new Set(traits.flatMap(t => t.categories))).sort();
+      const sel = document.getElementById('filter-category');
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        sel.appendChild(opt);
+      });
     }
 
     function renderSelectableSection(category, tbodyId) {
@@ -365,6 +394,9 @@
           // for both the positive and negative tables.
           av = Math.abs(a.points);
           bv = Math.abs(b.points);
+        } else if (state.col === 'categories') {
+          av = a.categories.join(', ');
+          bv = b.categories.join(', ');
         } else {
           av = a.name;
           bv = b.name;
@@ -377,7 +409,7 @@
       });
 
       if (!rows.length) {
-        body.innerHTML = `<tr class="empty-row"><td colspan="5">no traits match that search.</td></tr>`;
+        body.innerHTML = `<tr class="empty-row"><td colspan="6">no traits match those filters.</td></tr>`;
         return;
       }
 
@@ -385,11 +417,13 @@
         const isSelected = selected.has(t.name);
         const pointsClass = t.points < 0 ? 'negative' : t.points > 0 ? 'positive' : 'neutral';
         const checkClass = category === 'positive' ? 'positive-check' : 'negative-check';
+        const tags = t.categories.map(c => `<span class="tag">${c}</span>`).join('');
         return `
         <tr class="${isSelected ? 'selected' : ''}">
           <td class="pick-cell"><input type="checkbox" class="trait-check ${checkClass}" data-name="${t.name}" ${isSelected ? 'checked' : ''}></td>
           <td class="trait-name">${t.name}</td>
           <td class="points-cell ${pointsClass}">${t.points > 0 ? '+' : ''}${t.points}</td>
+          <td class="category-cell">${tags}</td>
           <td class="desc-cell">${t.description}</td>
           <td class="effects-cell">${effectsList(t.effects)}</td>
         </tr>
@@ -479,12 +513,18 @@
       renderAll();
     });
 
+    document.getElementById('filter-category').addEventListener('change', e => {
+      categoryFilter = e.target.value;
+      renderAll();
+    });
+
     document.getElementById('reset-btn').addEventListener('click', () => {
       selected.clear();
       saveSelected();
       renderAll();
     });
 
+    populateCategoryFilter();
     attachSorting();
     updateSortArrows();
     renderAll();
