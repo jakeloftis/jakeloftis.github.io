@@ -1,1 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>zomboid traits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0B0C;
+    --ink: #F2F1ED;
+    --muted: #7A7870;
+    --accent: #F5D400;
+    --positive: #6FCF7A;
+    --negative: #E85C4A;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+  }
+  header {
+    padding: 4rem 0 2rem;
+    border-bottom: 4px solid var(--accent);
+    margin-bottom: 2rem;
+  }
+  a.back {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+  }
+  a.back:hover { color: var(--accent); }
+  h1 {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 3rem;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 0 0 0.75rem;
+  }
+  .tagline {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  .tagline::before {
+    content: "// ";
+    color: var(--accent);
+  }
 
+  /* Sticky points budget bar */
+  .budget-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    border: 2px solid var(--ink);
+    padding: 1rem 1.5rem;
+    margin: 2rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .budget-bar.invalid {
+    border-color: var(--negative);
+  }
+  .budget-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .budget-total {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 2rem;
+  }
+  .budget-total.ok { color: var(--positive); }
+  .budget-total.bad { color: var(--negative); }
+  .budget-status {
+    font-size: 0.8rem;
+  }
+  .budget-status.ok { color: var(--positive); }
+  .budget-status.bad { color: var(--negative); }
+  .reset-btn {
+    background: var(--bg);
+    color: var(--muted);
+    border: 2px solid var(--muted);
+    border-radius: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+  }
+  .reset-btn:hover {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .controls input,
+  .controls select {
+    background: var(--bg);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.75rem;
+  }
+  .controls input {
+    flex: 1 1 220px;
+  }
+  .controls select {
+    flex: 0 0 auto;
+  }
+  .controls input:focus,
+  .controls select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .count {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin: -1rem 0 1.5rem;
+  }
+
+  section.group {
+    margin-bottom: 3rem;
+  }
+  h2 {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.25rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--ink);
+  }
+  h2 .h2-count {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 0.8rem;
+  }
+  .section-note {
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin: 0 0 1.25rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th {
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding: 0.6rem 0.75rem;
+    border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 0.85rem 0.75rem;
+    border-bottom: 1px solid rgba(242, 241, 237, 0.14);
+    vertical-align: top;
+  }
+  tbody tr.selected td {
+    background: rgba(245, 212, 0, 0.06);
+  }
+  .pick-cell {
+    text-align: center;
+    vertical-align: middle;
+    width: 2.5rem;
+  }
+  .pick-cell input[type="checkbox"] {
+    width: 1.15rem;
+    height: 1.15rem;
+    cursor: pointer;
+  }
+  .pick-cell input[type="checkbox"].positive-check {
+    accent-color: var(--positive);
+  }
+  .pick-cell input[type="checkbox"].negative-check {
+    accent-color: var(--negative);
+  }
+  .trait-name {
+    font-weight: 700;
+    font-family: 'Archivo', sans-serif;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+  .points-cell {
+    white-space: nowrap;
+    font-weight: 700;
+    text-align: right;
+  }
+  .points-cell.positive { color: var(--positive); }
+  .points-cell.negative { color: var(--negative); }
+  .points-cell.neutral { color: var(--muted); }
+  .desc-cell {
+    min-width: 220px;
+    max-width: 320px;
+  }
+  .effects-cell {
+    min-width: 240px;
+    max-width: 420px;
+  }
+  .effects-cell ul {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+  .effects-cell li {
+    margin-bottom: 0.3rem;
+  }
+  .effects-cell li:last-child {
+    margin-bottom: 0;
+  }
+  .empty-row td {
+    color: var(--muted);
+    padding: 1.5rem 0.75rem;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="back" href="/">&larr; home</a>
+      <h1>zomboid traits</h1>
+      <p class="tagline">every trait, plus a live points budget</p>
+    </header>
+
+    <div class="budget-bar" id="budget-bar">
+      <div>
+        <div class="budget-label">points remaining</div>
+        <div class="budget-total" id="budget-total">0</div>
+      </div>
+      <div class="budget-status" id="budget-status">valid &mdash; select traits below</div>
+      <button class="reset-btn" id="reset-btn">reset selections</button>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="search" placeholder="search traits...">
+    </div>
+    <p class="count" id="count"></p>
+
+    <section class="group">
+      <h2>positive traits <span class="h2-count" id="positive-count"></span></h2>
+      <p class="section-note">cost points to take (shown as negative)</p>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>trait</th>
+            <th style="text-align:right">points</th>
+            <th>description</th>
+            <th>effects</th>
+          </tr>
+        </thead>
+        <tbody id="positive-body"></tbody>
+      </table>
+    </section>
+
+    <section class="group">
+      <h2>negative traits <span class="h2-count" id="negative-count"></span></h2>
+      <p class="section-note">give points back when taken (shown as positive)</p>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>trait</th>
+            <th style="text-align:right">points</th>
+            <th>description</th>
+            <th>effects</th>
+          </tr>
+        </thead>
+        <tbody id="negative-body"></tbody>
+      </table>
+    </section>
+
+    <section class="group">
+      <h2>weight-based traits</h2>
+      <p class="section-note">not directly selectable &mdash; assigned automatically from your starting weight slider, shown here for reference only</p>
+      <table>
+        <thead>
+          <tr>
+            <th>trait</th>
+            <th>description</th>
+            <th>effects</th>
+          </tr>
+        </thead>
+        <tbody id="weight-body"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    const STORAGE_KEY = 'zomboid-traits-selected-v1';
+
+    let selected = loadSelected();
+    let searchTerm = '';
+
+    function loadSelected() {
+      try {
+        return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+      } catch (err) {
+        return new Set();
+      }
+    }
+
+    function saveSelected() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...selected]));
+      } catch (err) {
+        // localStorage unavailable - selections just won't persist.
+      }
+    }
+
+    function effectsList(effects) {
+      return effects.length ? `<ul>${effects.map(e => `<li>${e}</li>`).join('')}</ul>` : '';
+    }
+
+    function matchesSearch(t) {
+      if (!searchTerm) return true;
+      const haystack = (t.name + ' ' + t.description + ' ' + t.effects.join(' ')).toLowerCase();
+      return haystack.includes(searchTerm.toLowerCase());
+    }
+
+    function renderSelectableSection(category, tbodyId) {
+      const rows = traits.filter(t => t.category === category && t.points !== null && matchesSearch(t));
+      const body = document.getElementById(tbodyId);
+
+      if (!rows.length) {
+        body.innerHTML = `<tr class="empty-row"><td colspan="5">no traits match that search.</td></tr>`;
+        return;
+      }
+
+      body.innerHTML = rows.map(t => {
+        const isSelected = selected.has(t.name);
+        const pointsClass = t.points < 0 ? 'negative' : t.points > 0 ? 'positive' : 'neutral';
+        const checkClass = category === 'positive' ? 'positive-check' : 'negative-check';
+        return `
+        <tr class="${isSelected ? 'selected' : ''}">
+          <td class="pick-cell"><input type="checkbox" class="trait-check ${checkClass}" data-name="${t.name}" ${isSelected ? 'checked' : ''}></td>
+          <td class="trait-name">${t.name}</td>
+          <td class="points-cell ${pointsClass}">${t.points > 0 ? '+' : ''}${t.points}</td>
+          <td class="desc-cell">${t.description}</td>
+          <td class="effects-cell">${effectsList(t.effects)}</td>
+        </tr>
+      `;
+      }).join('');
+
+      document.querySelectorAll(`#${tbodyId} .trait-check`).forEach(cb => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) {
+            selected.add(cb.dataset.name);
+          } else {
+            selected.delete(cb.dataset.name);
+          }
+          saveSelected();
+          renderAll();
+        });
+      });
+    }
+
+    function renderReferenceOnlySections() {
+      const weightRows = traits.filter(t => t.points === null);
+      document.getElementById('weight-body').innerHTML = weightRows.map(t => `
+        <tr>
+          <td class="trait-name">${t.name}</td>
+          <td class="desc-cell">${t.description}</td>
+          <td class="effects-cell">${effectsList(t.effects)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function updateBudget() {
+      const total = [...selected].reduce((sum, name) => {
+        const t = traits.find(tr => tr.name === name);
+        return sum + (t ? t.points : 0);
+      }, 0);
+
+      const totalEl = document.getElementById('budget-total');
+      const statusEl = document.getElementById('budget-status');
+      const barEl = document.getElementById('budget-bar');
+      const valid = total >= 0;
+
+      totalEl.textContent = (total > 0 ? '+' : '') + total;
+      totalEl.className = 'budget-total ' + (valid ? 'ok' : 'bad');
+      statusEl.textContent = valid
+        ? `valid \u2014 ${selected.size} trait${selected.size === 1 ? '' : 's'} selected`
+        : `invalid \u2014 need ${Math.abs(total)} more point${Math.abs(total) === 1 ? '' : 's'} (remove a positive trait or add a negative one)`;
+      statusEl.className = 'budget-status ' + (valid ? 'ok' : 'bad');
+      barEl.classList.toggle('invalid', !valid);
+    }
+
+    function updateCounts() {
+      const posCount = traits.filter(t => t.category === 'positive' && t.points !== null && matchesSearch(t)).length;
+      const negCount = traits.filter(t => t.category === 'negative' && t.points !== null && matchesSearch(t)).length;
+      document.getElementById('positive-count').textContent = `(${posCount})`;
+      document.getElementById('negative-count').textContent = `(${negCount})`;
+      document.getElementById('count').textContent = searchTerm
+        ? `${posCount + negCount} traits match "${searchTerm}"`
+        : '';
+    }
+
+    function renderAll() {
+      renderSelectableSection('positive', 'positive-body');
+      renderSelectableSection('negative', 'negative-body');
+      updateCounts();
+      updateBudget();
+    }
+
+    document.getElementById('search').addEventListener('input', e => {
+      searchTerm = e.target.value;
+      renderAll();
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      selected.clear();
+      saveSelected();
+      renderAll();
+    });
+
+    renderReferenceOnlySections();
+    renderAll();
+  </script>
+</body>
+</html>
