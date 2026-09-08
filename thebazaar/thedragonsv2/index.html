@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>dragons items</title>
+<meta name="description" content="Every Dragons item from The Bazaar, sortable and searchable.">
+
+<!-- Open Graph / Discord, Slack, iMessage, etc. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="jakiepoo">
+<meta property="og:title" content="dragons items">
+<meta property="og:description" content="Every Dragons item from The Bazaar, sortable and searchable.">
+<meta property="og:image" content="https://jakiepoo.com/assets/og/og-dragon-items.png">
+<meta property="og:url" content="https://jakiepoo.com/thebazaar/dragon-items/">
+
+<!-- Twitter/X card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="dragons items">
+<meta name="twitter:description" content="Every Dragons item from The Bazaar, sortable and searchable.">
+<meta name="twitter:image" content="https://jakiepoo.com/assets/og/og-dragon-items.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -199,6 +214,20 @@
   .cooldown-cell {
     white-space: nowrap;
   }
+  .text-cell {
+    min-width: 260px;
+    max-width: 420px;
+  }
+  .text-cell ul {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+  .text-cell li {
+    margin-bottom: 0.3rem;
+  }
+  .text-cell li:last-child {
+    margin-bottom: 0;
+  }
   .empty-row td {
     color: var(--muted);
     padding: 1.5rem 0.75rem;
@@ -215,7 +244,7 @@
     </header>
 
     <div class="controls">
-      <input type="text" id="search" placeholder="search items...">
+      <input type="text" id="search" placeholder="search items or ability text...">
       <select id="filter-size">
         <option value="">all sizes</option>
       </select>
@@ -233,6 +262,7 @@
             <th data-col="name">item<span class="arrow"></span></th>
             <th data-col="size">size<span class="arrow"></span></th>
             <th data-col="cooldown">cooldown<span class="arrow"></span></th>
+            <th class="no-sort">ability</th>
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
@@ -306,7 +336,10 @@
 
     function getFilteredSorted() {
       let rows = dragonsItems.filter(r => {
-        if (filters.search && !r.name.toLowerCase().includes(filters.search.toLowerCase())) return false;
+        if (filters.search) {
+          const haystack = (r.name + ' ' + r.text.join(' ')).toLowerCase();
+          if (!haystack.includes(filters.search.toLowerCase())) return false;
+        }
         if (filters.size && r.size !== filters.size) return false;
         if (filters.type && !r.types.includes(filters.type)) return false;
         return true;
@@ -353,18 +386,22 @@
       count.textContent = `${rows.length} item${rows.length === 1 ? '' : 's'}`;
 
       if (!rows.length) {
-        body.innerHTML = `<tr class="empty-row"><td colspan="${4 + categories.length}">no items match those filters.</td></tr>`;
+        body.innerHTML = `<tr class="empty-row"><td colspan="${5 + categories.length}">no items match those filters.</td></tr>`;
         return;
       }
 
       body.innerHTML = rows.map(r => {
         const checked = haveState[r.name] ? 'checked' : '';
+        const abilityList = r.text.length
+          ? `<ul>${r.text.map(line => `<li>${line}</li>`).join('')}</ul>`
+          : '';
         return `
         <tr>
           <td class="have-cell"><input type="checkbox" class="have-checkbox" data-key="${r.name}" ${checked}></td>
           <td class="item-name">${r.name}</td>
           <td class="size-cell">${r.size}</td>
           <td class="cooldown-cell">${r.cooldown || '\u2014'}</td>
+          <td class="text-cell">${abilityList}</td>
           ${categories.map(cat => `<td class="category-cell">${r.types.includes(cat) ? '\u2713' : ''}</td>`).join('')}
         </tr>
       `;
