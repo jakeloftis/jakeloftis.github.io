@@ -88,11 +88,6 @@
     border-radius: 4px;
     background: var(--line);
   }
-  .embed-caption {
-    margin: 0.75rem 0 0;
-    color: var(--muted);
-    font-size: 0.9rem;
-  }
 </style>
 </head>
 <body>
@@ -145,13 +140,6 @@
         wrapper.className = 'embed-item';
 
         wrapper.appendChild(buildMediaElement(item));
-
-        if (item.caption) {
-          const caption = document.createElement('p');
-          caption.className = 'embed-caption';
-          caption.textContent = item.caption;
-          wrapper.appendChild(caption);
-        }
 
         container.appendChild(wrapper);
       });
