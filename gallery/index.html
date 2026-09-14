@@ -109,53 +109,11 @@
 
   <script src="embeds.js"></script>
   <script>
-    // Imgur API Client ID - free, anonymous, read-only. Get one at
-    // https://api.imgur.com/oauth2/addclient (choose "Anonymous usage
-    // without user authorization"). Safe to expose client-side; that's
-    // how this API is designed to be used for public read requests.
-    const IMGUR_CLIENT_ID = 'YOUR_CLIENT_ID_HERE';
-
-    // Extracts the type ('album' or 'image') and ID from an imgur URL.
-    function parseImgurUrl(url) {
-      let match = url.match(/imgur\.com\/(a|gallery)\/(?:[\w-]+-)?([a-zA-Z0-9]+)/i);
-      if (match) {
-        return { type: 'album', id: match[2] };
-      }
-      match = url.match(/imgur\.com\/(?:[\w-]+-)?([a-zA-Z0-9]{4,10})(?:[/?#]|$)/i);
-      if (match) {
-        return { type: 'image', id: match[1] };
-      }
-      return null;
-    }
-
-    // Fetches direct media info (link, mp4 if animated, title) from the
-    // Imgur API instead of using their /embed iframe, so we render the
-    // actual file ourselves with a plain <img>/<video> - no iframe chrome,
-    // no white bars, full styling control.
-    async function fetchImgurMedia(parsed) {
-      const endpoint = parsed.type === 'album'
-        ? `https://api.imgur.com/3/album/${parsed.id}`
-        : `https://api.imgur.com/3/image/${parsed.id}`;
-
-      const res = await fetch(endpoint, {
-        headers: { Authorization: `Client-ID ${IMGUR_CLIENT_ID}` }
-      });
-      if (!res.ok) throw new Error(`Imgur API ${res.status}`);
-      const json = await res.json();
-
-      if (parsed.type === 'album') {
-        const images = json.data.images || [];
-        return { title: json.data.title || null, images };
-      }
-      return { title: json.data.title || null, images: [json.data] };
-    }
-
-    function buildMediaElement(image) {
-      if (image.mp4) {
+    function buildMediaElement(item) {
+      if (item.type === 'video') {
         const video = document.createElement('video');
         video.className = 'embed-media';
-        video.src = image.mp4;
-        video.poster = image.link;
+        video.src = item.url;
         video.autoplay = true;
         video.loop = true;
         video.muted = true;
@@ -165,48 +123,38 @@
       }
       const img = document.createElement('img');
       img.className = 'embed-media';
-      img.src = image.link;
+      img.src = item.url;
       img.loading = 'lazy';
-      img.alt = image.title || image.description || '';
+      img.alt = item.caption || '';
       return img;
     }
 
-    async function renderEmbeds() {
+    function renderEmbeds() {
       const container = document.getElementById('embeds');
-      const urls = (typeof imgurUrls !== 'undefined') ? imgurUrls : [];
+      const items = (typeof galleryItems !== 'undefined') ? galleryItems : [];
 
-      if (!urls.length) {
+      if (!items.length) {
         container.innerHTML = '<p class="empty">Nothing here yet.</p>';
         return;
       }
 
       container.innerHTML = '';
 
-      for (const url of urls) {
-        const parsed = parseImgurUrl(url);
-        if (!parsed) continue;
+      items.forEach(item => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'embed-item';
 
-        const item = document.createElement('div');
-        item.className = 'embed-item';
-        item.innerHTML = '<p class="empty">Loading…</p>';
-        container.appendChild(item);
+        wrapper.appendChild(buildMediaElement(item));
 
-        try {
-          const media = await fetchImgurMedia(parsed);
-          item.innerHTML = '';
-          media.images.forEach(image => {
-            item.appendChild(buildMediaElement(image));
-          });
-          if (media.title) {
-            const caption = document.createElement('p');
-            caption.className = 'embed-caption';
-            caption.textContent = media.title;
-            item.appendChild(caption);
-          }
-        } catch (err) {
-          item.innerHTML = `<p class="empty">Couldn't load this one — <a href="${url}" target="_blank" rel="noopener">view on Imgur</a>.</p>`;
+        if (item.caption) {
+          const caption = document.createElement('p');
+          caption.className = 'embed-caption';
+          caption.textContent = item.caption;
+          wrapper.appendChild(caption);
         }
-      }
+
+        container.appendChild(wrapper);
+      });
     }
 
     renderEmbeds();
