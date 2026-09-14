@@ -103,7 +103,7 @@
   <div class="wrap">
     <header>
       <p class="back"><a class="back" href="/">&larr; home</a></p>
-      <h1>gallery TEST1</h1>
+      <h1>gallery</h1>
       <p class="tagline">Clips and images worth keeping.</p>
     </header>
     <div id="embeds">
@@ -118,8 +118,15 @@
     // restyle since it's cross-origin. Instead we crop them out: the
     // iframe renders at full height but sits inside a shorter, clipped
     // container, shifted up so the top bar scrolls out of view above it.
+    // Imgur's embed page has its own white "Share" bar (top) and a bottom
+    // bar baked into the iframe content, which we can't restyle since it's
+    // cross-origin. We crop them out by shifting the iframe up inside a
+    // clipped container. Album embeds (?pub=true) have a short bottom bar
+    // (just the imgur logo); single-image embeds have a taller one (a
+    // caption line plus the logo), so they need extra bottom crop.
     const CROP_TOP = 54;
-    const CROP_BOTTOM = 54;
+    const CROP_BOTTOM_ALBUM = 54;
+    const CROP_BOTTOM_SINGLE = 90;
 
     // Builds the right Imgur embed URL depending on link type:
     // - Albums (imgur.com/a/...) use the /a/{id}/embed?pub=true endpoint
@@ -127,11 +134,11 @@
     function parseImgurEmbedUrl(url) {
       let match = url.match(/imgur\.com\/(a|gallery)\/(?:[\w-]+-)?([a-zA-Z0-9]+)/i);
       if (match) {
-        return `https://imgur.com/a/${match[2]}/embed?pub=true`;
+        return { embedUrl: `https://imgur.com/a/${match[2]}/embed?pub=true`, type: 'album' };
       }
       match = url.match(/imgur\.com\/(?:[\w-]+-)?([a-zA-Z0-9]{4,10})(?:[/?#]|$)/i);
       if (match) {
-        return `https://imgur.com/${match[1]}/embed`;
+        return { embedUrl: `https://imgur.com/${match[1]}/embed`, type: 'single' };
       }
       return null;
     }
@@ -148,8 +155,8 @@
       container.innerHTML = '';
 
       urls.forEach(url => {
-        const embedUrl = parseImgurEmbedUrl(url);
-        if (!embedUrl) return;
+        const parsed = parseImgurEmbedUrl(url);
+        if (!parsed) return;
 
         const item = document.createElement('div');
         item.className = 'embed-item';
@@ -158,7 +165,8 @@
         frame.className = 'embed-frame';
 
         const iframe = document.createElement('iframe');
-        iframe.src = embedUrl;
+        iframe.src = parsed.embedUrl;
+        iframe.dataset.embedType = parsed.type;
         iframe.loading = 'lazy';
         iframe.allowFullscreen = true;
         iframe.scrolling = 'no';
@@ -190,7 +198,8 @@
         if (iframe.contentWindow === e.source) {
           iframe.style.height = data.height + 'px';
           const frame = iframe.parentElement;
-          const visibleHeight = Math.max(data.height - CROP_TOP - CROP_BOTTOM, 50);
+          const cropBottom = iframe.dataset.embedType === 'single' ? CROP_BOTTOM_SINGLE : CROP_BOTTOM_ALBUM;
+          const visibleHeight = Math.max(data.height - CROP_TOP - cropBottom, 50);
           frame.style.height = visibleHeight + 'px';
         }
       });
