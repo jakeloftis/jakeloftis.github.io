@@ -82,12 +82,20 @@
     color: var(--muted);
     padding: 1.25rem 0;
   }
-  .embed-item iframe {
-    display: block;
-    width: 100%;
-    min-height: 300px;
-    border: none;
+  .embed-frame {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
     border-radius: 4px;
+    min-height: 300px;
+  }
+  .embed-frame iframe {
+    display: block;
+    position: absolute;
+    top: -54px;
+    left: 0;
+    width: 100%;
+    border: none;
   }
 </style>
 </head>
@@ -105,6 +113,14 @@
 
   <script src="embeds.js"></script>
   <script>
+    // Imgur's embed page has its own white "Share" bar (top) and imgur
+    // logo bar (bottom) baked into the iframe content, which we can't
+    // restyle since it's cross-origin. Instead we crop them out: the
+    // iframe renders at full height but sits inside a shorter, clipped
+    // container, shifted up so the top bar scrolls out of view above it.
+    const CROP_TOP = 54;
+    const CROP_BOTTOM = 54;
+
     // Builds the right Imgur embed URL depending on link type:
     // - Albums (imgur.com/a/...) use the /a/{id}/embed?pub=true endpoint
     // - Single image/gif/video posts use the plainer /{id}/embed endpoint
@@ -138,6 +154,9 @@
         const item = document.createElement('div');
         item.className = 'embed-item';
 
+        const frame = document.createElement('div');
+        frame.className = 'embed-frame';
+
         const iframe = document.createElement('iframe');
         iframe.src = embedUrl;
         iframe.loading = 'lazy';
@@ -145,7 +164,8 @@
         iframe.scrolling = 'no';
         iframe.title = url;
 
-        item.appendChild(iframe);
+        frame.appendChild(iframe);
+        item.appendChild(frame);
         container.appendChild(item);
       });
     }
@@ -166,9 +186,12 @@
 
       if (!data || data.message !== 'resize_imgur' || typeof data.height !== 'number') return;
 
-      document.querySelectorAll('.embed-item iframe').forEach(iframe => {
+      document.querySelectorAll('.embed-frame iframe').forEach(iframe => {
         if (iframe.contentWindow === e.source) {
           iframe.style.height = data.height + 'px';
+          const frame = iframe.parentElement;
+          const visibleHeight = Math.max(data.height - CROP_TOP - CROP_BOTTOM, 50);
+          frame.style.height = visibleHeight + 'px';
         }
       });
     });
